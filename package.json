@@ -1,0 +1,37 @@
+{
+  "name": "sathyacoatings",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@expo-google-fonts/poppins": "^0.4.0",
+    "@expo/vector-icons": "^14.1.0",
+    "@react-native-picker/picker": "^2.11.1",
+    "@react-navigation/bottom-tabs": "^7.4.6",
+    "@react-navigation/drawer": "^7.5.7",
+    "@react-navigation/native": "^7.1.17",
+    "axios": "^1.11.0",
+    "expo": "~53.0.20",
+    "expo-font": "~13.3.2",
+    "expo-status-bar": "~2.2.3",
+    "lucide-react-native": "^0.540.0",
+    "nativewind": "^4.1.23",
+    "react": "19.0.0",
+    "react-native": "0.79.5",
+    "react-native-element-dropdown": "^2.12.4",
+    "react-native-paper": "^5.14.5",
+    "react-native-reanimated": "~3.17.4",
+    "react-native-safe-area-context": "^5.6.1",
+    "react-native-screens": "^4.15.2",
+    "react-native-toast-message": "^2.3.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0"
+  },
+  "private": true
+}
