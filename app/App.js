@@ -17,7 +17,8 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 // for when open app first page
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginPage from "./components/Profile/LoginPage";
-import {ExpenseEntry} from "./components/ExpenseModules/ExpenseEntry";
+import ExpenseEntry from "./components/ExpenseModules/ExpenseEntry";
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator(); // for switching tabs like react routing 
 

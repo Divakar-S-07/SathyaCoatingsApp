@@ -21,7 +21,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 
-const ExpenseEntry = () => {
+export default function ExpenseEntry(){
   const [projects, setProjects] = useState([]);
   const [sites, setSites] = useState([]);
   const [pettyCashRecords, setPettyCashRecords] = useState([]);
@@ -540,9 +540,9 @@ const ExpenseEntry = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <Text style={styles.headerTitle}>Expense Entry</Text>
-      </View>
+      </View> */}
 
       {error && (
         <View style={styles.errorContainer}>
@@ -1192,4 +1192,3 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ExpenseEntry;
