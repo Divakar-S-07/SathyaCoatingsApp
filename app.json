@@ -4,7 +4,7 @@
     "slug": "sathyaCoatings",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./app/assets/logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -24,6 +24,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.divaofficial.sathyaCoatings"
+      
     },
     "web": {
       "bundler": "metro",

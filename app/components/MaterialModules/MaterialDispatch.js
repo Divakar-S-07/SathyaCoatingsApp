@@ -262,6 +262,7 @@ const Material = () => {
           value={siteData.find((s) => s.value === selectedSite)}
           onPress={() => setSiteModalVisible(true)}
           disabled={!selectedProject}
+          
         />
         {/* Filter Button */}
         <View style={{ marginHorizontal: 4, marginTop: 20 }}>

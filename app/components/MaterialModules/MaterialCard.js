@@ -37,7 +37,7 @@ const MaterialCard = ({ itemId, onView, onUpdate, image}) => {
                 backgroundColor: "#f5f5f5",
               }}
             >
-              <Text style={{ fontSize: 14, fontWeight: "600", textAlign: "center", color: "#333" }}>
+              <Text style={{ fontSize: 12, fontWeight: "600", textAlign: "center", color: "#333" }}>
                 Update
               </Text>
             </TouchableOpacity>

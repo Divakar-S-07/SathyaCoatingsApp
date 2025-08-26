@@ -41,7 +41,7 @@ export default function ViewMaterial({
           onPress={e => e.stopPropagation()}
         >
           {/* Header */}
-          <View className="flex-row items-center p-4 bg-slate-800">
+          <View className="flex-row items-center p-4 bg-[#1e7a6f]">
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
@@ -158,7 +158,7 @@ export default function ViewMaterial({
             <Button
             mode="contained"
             onPress={() => console.log('Pressed')}
-            buttonColor="#333"   // background color
+            buttonColor="#1e7a6f"   // background color
             textColor="#ffffff"     // text color
             style={{ borderRadius: 8, margin: 10 }} // optional style
             >

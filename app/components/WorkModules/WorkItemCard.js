@@ -62,7 +62,7 @@ const WorkItemCard = ({ item, newWorkData, onChange, onSubmit, submitting }) => 
       {/* Accordion Header */}
       <TouchableOpacity
         onPress={() => setShowSubcategories(!showSubcategories)}
-        className="flex-row items-center justify-between px-2 py-3 mt-4 rounded-lg bg-slate-300"
+        className="flex-row items-center justify-between px-2 py-3 mt-4 rounded-lg bg-slate-100"
       >
         <View className="flex-row items-center">
           <Ionicons name="layers-outline" size={18} color="#374151" />
@@ -89,13 +89,15 @@ const WorkItemCard = ({ item, newWorkData, onChange, onSubmit, submitting }) => 
                 className="flex-row items-center justify-between p-3"
               >
                 <View className="flex-row items-center flex-1">
-                  <View className="items-center justify-center w-8 h-8 mr-3 bg-blue-200 rounded-full">
-                    <Ionicons name={subcat.icon} size={16} color="#374151" />
+                  <View className="items-center justify-center w-8 h-8 mr-3 bg-[#1e7a6f] rounded-full">
+                    <Ionicons name={subcat.icon} size={16} color="#fff" />
+
                   </View>
                   <View className="flex-1">
                     <Text className="text-sm font-semibold text-gray-800">{subcat.name}</Text>
                   </View>
                 </View>
+                
                 <Ionicons
                   name={expandedSubIndex === index ? "chevron-up" : "chevron-down"}
                   size={16}
@@ -112,7 +114,7 @@ const WorkItemCard = ({ item, newWorkData, onChange, onSubmit, submitting }) => 
                   {/* Add more fields here if needed */}
                     <TouchableOpacity
                       className={`mt-4 py-3 rounded-lg flex-row justify-center items-center ${
-                        submitting ? 'bg-gray-400' : 'bg-slate-400'
+                        submitting ? 'bg-gray-400' : 'bg-[#1e7a6f]'
                       }`}
                       disabled={submitting}
                       onPress={handleUpdatePress}
@@ -132,7 +134,7 @@ const WorkItemCard = ({ item, newWorkData, onChange, onSubmit, submitting }) => 
       {/* Update Button */}
       <TouchableOpacity
         className={`mt-4 py-3 rounded-lg flex-row justify-center items-center ${
-          submitting ? 'bg-gray-400' : 'bg-slate-800'
+          submitting ? 'bg-gray-400' : 'bg-[#1e7a6f]'
         }`}
         disabled={submitting}
         onPress={handleUpdatePress}
@@ -168,7 +170,7 @@ const WorkItemCard = ({ item, newWorkData, onChange, onSubmit, submitting }) => 
             />
             <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
               <TouchableOpacity
-                style={{ backgroundColor: "#374151", padding: 10, borderRadius: 6, marginRight: 8 }}
+                style={{ backgroundColor: "#1e7a6f", padding: 10, borderRadius: 6, marginRight: 8 }}
                 onPress={handleQuantityUpdate}
               >
                 <Text style={{ color: "white" }}>Save</Text>
