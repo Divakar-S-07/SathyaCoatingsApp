@@ -102,7 +102,7 @@ export default function ExpenseEntry(){
         { site_id },
         {
           headers: {
-            Authorization: Bearer `${token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -125,7 +125,7 @@ export default function ExpenseEntry(){
           { petty_cash_id: record.id },
           {
             headers: {
-              Authorization: Bearer `${token}`,
+              Authorization: `Bearer ${token}`,
             },
           }
         )
@@ -155,7 +155,7 @@ export default function ExpenseEntry(){
       const token = await AsyncStorage.getItem("token");
       const response = await axios.get("http://103.118.158.33/api/expense/categories", {
         headers: {
-          Authorization: Bearer `${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       setCategories(Array.isArray(response.data.data) ? response.data.data : []);
@@ -174,7 +174,7 @@ export default function ExpenseEntry(){
         { exp_category_id: parseInt(exp_category_id) },
         {
           headers: {
-            Authorization: Bearer `${token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -311,7 +311,7 @@ export default function ExpenseEntry(){
         {
           headers: {
             'Content-Type': 'multipart/form-data',
-            Authorization: Bearer `${token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -372,7 +372,7 @@ export default function ExpenseEntry(){
         requestData,
         {
           headers: {
-            Authorization: Bearer `${token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -533,7 +533,7 @@ export default function ExpenseEntry(){
     const selectedCategory = categories.find(cat => cat.id === parseInt(expenseForm.expense_category_id));
     return selectedCategory && 
       (selectedCategory.exp_category.toLowerCase().includes('room rent') || 
-       selectedCategory.exp_category.toLowerCase().includes('labour food')|| 
+       selectedCategory.exp_category.toLowerCase().includes('labour food') || 
        selectedCategory.exp_category.toLowerCase().includes('site er food')
       );
   };
@@ -958,7 +958,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#4f46e5",
+    backgroundColor: "#1e7a6f",
     padding: 12,
     borderRadius: 8,
   },
@@ -1184,7 +1184,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f3f4f6",
   },
   submitButton: {
-    backgroundColor: "#4f46e5",
+    backgroundColor: "#1e7a6f",
   },
   buttonText: {
     fontWeight: "500",

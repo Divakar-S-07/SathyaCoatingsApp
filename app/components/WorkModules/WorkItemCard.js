@@ -1,185 +1,217 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { View, Text, TouchableOpacity, TextInput, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-const WorkItemCard = ({ item, newWorkData, onChange, onSubmit, submitting }) => {
-  const [showSubcategories, setShowSubcategories] = useState(false);
-  const [expandedSubIndex, setExpandedSubIndex] = useState(null);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [areaInput, setAreaInput] = useState("");
+const isCompleted = (r) =>
+  parseFloat(r?.completion_value) > 0 &&
+  parseFloat(r?.completion_value).toFixed(2) === parseFloat(r?.value).toFixed(2);
 
-  const alreadyCompleted = parseFloat(item.area_completed) || 0;
-  const addition = parseFloat(newWorkData[item.rec_id]) || 0;
-  const totalCompleted = alreadyCompleted + addition;
-  const isCompleted =
-    parseFloat(item.area_completed || 0) >= parseFloat(item.po_quantity || 0);
+export default function WorkItemCard({
+  item,
+  selectedDate, // "YYYY-MM-DD"
+  displayData, // { cumulative_area, entries: [] }
+  newWorkData,
+  onChange,
+  onSubmit,
+  submitting,
+}) {
+  const [showModal, setShowModal] = useState(false);
 
-  const subcategories = [
-    { name: "Primer Application", icon: "brush-outline", status: "Completed" },
-    { name: "Wall Pasting", icon: "hammer-outline", status: "In Progress" },
-    { name: "Paint Application", icon: "color-palette-outline", status: "Not Started" },
-    { name: "Final Finishing", icon: "checkmark-circle-outline", status: "Not Started" },
-  ];
-
-  // Only one dropdown open at a time
-  const toggleExpandSubcategory = (idx) => {
-    setExpandedSubIndex(prev => (prev === idx ? null : idx));
-  };
-
-  const handleUpdatePress = () => setShowUpdateModal(true);
-  const handleModalClose = () => setShowUpdateModal(false);
-
-  const handleQuantityUpdate = () => {
-    if (onChange) {
-      onChange(item.rec_id, areaInput);
-    }
-    if (onSubmit) {
-      onSubmit();
-    }
-    setShowUpdateModal(false);
-  };
+  const rate = parseFloat(item.rate) || 0;
+  const cumulativeValue = useMemo(
+    () => (displayData.cumulative_area * rate).toFixed(2),
+    [displayData.cumulative_area, rate]
+  );
 
   return (
-    <View className="p-4 mb-3 bg-white border border-gray-800 shadow-sm rounded-xl">
-      <Text className="text-xl font-bold text-gray-800">
+    <View
+      style={{
+        backgroundColor: "#fff",
+        borderWidth: 1,
+        // borderColor: "#e5e7eb",
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 12,
+      }}
+    >
+      <Text
+        style={{
+          fontWeight: "700",
+          fontSize: 16,
+          color: "#111827",
+          marginBottom: 4,
+        }}
+        className="p-2 text-center  border-b-[#aaa] border bg-gray-100"
+      >
+        {item.subcategory_name}
+      </Text>
+
+
+      <Text style={{ color: "#6b7280", fontSize: 12, marginBottom: 4 }}>
         Item: {item.item_id}
       </Text>
-      <Text className="mt-1 text-sm text-gray-600">
-        {item.work_descriptions}
-      </Text>
-      <Text className="mt-2 text-xs font-bold text-gray-700">
-        PO Qty: {item.po_quantity} {item.uom}
-      </Text>
-      <View className="flex flex-row justify-between ">
-        <Text className="mt-2 text-xs font-bold text-gray-700">
-          Open Quantity: {item.po_quantity}
-        </Text>
-        <Text className="mt-2 text-xs font-bold text-gray-700">
-          Area Completed: {item.area_completed || 0}
+      <View
+        style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}
+      >
+        <Ionicons name="document-text-outline" size={16} color="#4f46e5" />
+        <Text style={{ marginLeft: 6, color: "#374151", fontSize: 13 }}>
+          {item.work_descriptions}
         </Text>
       </View>
 
-      {/* Accordion Header */}
-      <TouchableOpacity
-        onPress={() => setShowSubcategories(!showSubcategories)}
-        className="flex-row items-center justify-between px-2 py-3 mt-4 rounded-lg bg-slate-100"
-      >
-        <View className="flex-row items-center">
-          <Ionicons name="layers-outline" size={18} color="#374151" />
-          <Text className="ml-2 text-base font-semibold text-gray-700">
-            Work Subcategories
+      {/* Progress as of selected date */}
+      <View style={{ marginBottom: 8 }}>
+        <Text style={{ fontSize: 13 }}>
+          {/* <Text style={{ fontWeight: "600" }}>
+            Progress as of {selectedDate}:
+          </Text>{" "} */}
+          Area{" "}
+          <Text style={{ fontWeight: "700" }}>
+            {displayData.cumulative_area.toFixed(2)}
+          </Text>{" "}
+          {/* | Value <Text style={{ fontWeight: "700" }}>{cumulativeValue}</Text> */}
+        </Text>
+      </View>
+
+      {/* Entries on selected date */}
+      {/* <View style={{ marginBottom: 10 }}>
+        <Text style={{ fontSize: 13, fontWeight: "600" }}>
+          Entries on {selectedDate}:
+        </Text>
+        {displayData.entries.length === 0 ? (
+          <Text style={{ fontSize: 12, color: "#6b7280" }}>No entries</Text>
+        ) : (
+          displayData.entries.map((e) => (
+            <Text key={e.entry_id} style={{ fontSize: 12, color: "#374151" }}>
+              {parseFloat(e.area_added || 0).toFixed(2)} added at{" "}
+              {new Date(e.created_at).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
+          ))
+        )}
+      </View> */}
+
+      {/* Completed or Update */}
+      {isCompleted(item) ? (
+        <View
+          style={{
+            paddingVertical: 8,
+            paddingHorizontal: 10,
+            borderWidth: 1,
+            borderColor: "#bbf7d0",
+            backgroundColor: "#ecfccb",
+            borderRadius: 8,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{ color: "#166534", fontWeight: "700", marginRight: 6 }}
+          >
+            Completed
           </Text>
+          <Ionicons name="checkmark-done-circle" size={16} color="#16a34a" />
         </View>
-
-        {/* category icon */}
-        <Ionicons
-          name={showSubcategories ? "chevron-up" : "chevron-down"}
-          size={18}
-          color="#374151"
-        />
-      </TouchableOpacity>
-
-      {/* Accordion Content: Only one dropdown open */}
-      {showSubcategories && (
-        <View className="mt-2 space-y-2">
-          {subcategories.map((subcat, index) => (
-            <View key={index} className="mb-4 bg-white border border-gray-200 rounded-lg">
-              <TouchableOpacity
-                onPress={() => toggleExpandSubcategory(index)}
-                className="flex-row items-center justify-between p-3"
-              >
-                <View className="flex-row items-center flex-1">
-                  <View className="items-center justify-center w-8 h-8 mr-3 bg-[#1e7a6f] rounded-full">
-                    <Ionicons name={subcat.icon} size={16} color="#fff" />
-
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-sm font-semibold text-gray-800">{subcat.name}</Text>
-                  </View>
-                </View>
-                
-                <Ionicons
-                  name={expandedSubIndex === index ? "chevron-up" : "chevron-down"}
-                  size={16}
-                  color="#374151"
-                />
-              </TouchableOpacity>
-
-
-
-              
-              {expandedSubIndex === index && (
-                <View style={{ padding: 12, backgroundColor: "#f4f4f5", borderTopWidth: 1, borderColor: "#ececec" }}>
-                  <Text className="ml-1 text-sm font-bold">Area Completed: 0</Text>
-                  {/* Add more fields here if needed */}
-                    <TouchableOpacity
-                      className={`mt-4 py-3 rounded-lg flex-row justify-center items-center ${
-                        submitting ? 'bg-gray-400' : 'bg-[#1e7a6f]'
-                      }`}
-                      disabled={submitting}
-                      onPress={handleUpdatePress}
-                    >
-                      <Ionicons name="refresh-outline" size={16} color="white" />
-                      <Text className="ml-2 font-semibold text-white">
-                        Update
-                      </Text>
-                    </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          ))}
-        </View>
+      ) : (
+        <TouchableOpacity
+          onPress={() => setShowModal(true)}
+          style={{
+            paddingVertical: 8,
+            paddingHorizontal: 12,
+            backgroundColor: "#1e7a6f",
+            borderRadius: 8,
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "center",
+          }}
+        >
+          <Ionicons
+            name="create-outline"
+            size={16}
+            color="#fff"
+            style={{ marginRight: 6 }}
+          />
+          <Text style={{ color: "#fff", fontWeight: "600" }}>Update Area</Text>
+        </TouchableOpacity>
       )}
 
-      {/* Update Button */}
-      <TouchableOpacity
-        className={`mt-4 py-3 rounded-lg flex-row justify-center items-center ${
-          submitting ? 'bg-gray-400' : 'bg-[#1e7a6f]'
-        }`}
-        disabled={submitting}
-        onPress={handleUpdatePress}
-      >
-        <Ionicons name="refresh-outline" size={16} color="white" />
-        <Text className="ml-2 font-semibold text-white">
-          {submitting ? 'Updating...' : 'Update Progress'}
-        </Text>
-      </TouchableOpacity>
-
-      {/* Modal for Quantity Update */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={showUpdateModal}
-        onRequestClose={handleModalClose}
-      >
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#00000055" }}>
-          <View style={{ padding: 20, backgroundColor: "white", borderRadius: 15, width: "80%" }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold", marginBottom: 12 }}>Update Area Quantity</Text>
+      {/* Update Modal */}
+      <Modal visible={showModal} transparent animationType="fade">
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: 10,
+              padding: 20,
+              width: "100%",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "700",
+                marginBottom: 12,
+                color: "#111827",
+              }}
+            >
+              Update Work Area
+            </Text>
             <TextInput
-              value={areaInput}
-              onChangeText={setAreaInput}
               keyboardType="numeric"
-              placeholder="Enter new area"
+              value={String(newWorkData[item.rec_id] ?? "")}
+              onChangeText={(t) => onChange(item.rec_id, t)}
+              placeholder="Enter new work area"
               style={{
                 borderWidth: 1,
-                borderColor: "#ccc",
-                padding: 10,
+                borderColor: "#d1d5db",
+                borderRadius: 8,
+                paddingHorizontal: 10,
+                paddingVertical: 8,
                 marginBottom: 16,
-                borderRadius: 6,
               }}
             />
-            <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "flex-end",
+              }}
+            >
               <TouchableOpacity
-                style={{ backgroundColor: "#1e7a6f", padding: 10, borderRadius: 6, marginRight: 8 }}
-                onPress={handleQuantityUpdate}
+                onPress={() => setShowModal(false)}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  marginRight: 10,
+                  borderRadius: 8,
+                  backgroundColor: "#9ca3af",
+                }}
               >
-                <Text style={{ color: "white" }}>Save</Text>
+                <Text style={{ color: "#fff" }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{ backgroundColor: "#ccc", padding: 10, borderRadius: 6 }}
-                onPress={handleModalClose}
+                onPress={() => {
+                  onSubmit(item);
+                  setShowModal(false);
+                }}
+                disabled={submitting}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  borderRadius: 8,
+                  backgroundColor: submitting ? "#9ca3af" : "#10b981",
+                }}
               >
-                <Text>Cancel</Text>
+                <Text style={{ color: "#fff" }}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -187,6 +219,4 @@ const WorkItemCard = ({ item, newWorkData, onChange, onSubmit, submitting }) => 
       </Modal>
     </View>
   );
-};
-
-export default WorkItemCard;
+}
