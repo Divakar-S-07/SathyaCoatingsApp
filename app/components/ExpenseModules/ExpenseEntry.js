@@ -864,25 +864,31 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
+    // flexDirection: "row",
+    
+    marginBottom: 16
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#333",
+    
   },
   totalAmountContainer: {
     backgroundColor: "#eef2ff",
     padding: 12,
     borderRadius: 8,
-    alignItems: "flex-end",
+    // alignItems: "flex-end",
+    textAlign: 'center',
     paddingLeft: 5,
+    display: 'flex',
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
   },
   totalAmountLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#4f46e5",
     fontWeight: "500",
   },
@@ -907,7 +913,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   picker: {
-    height: 50,
+    // height: 50,
   },
   poText: {
     fontSize: 12,
