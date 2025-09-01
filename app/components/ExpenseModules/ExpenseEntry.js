@@ -602,7 +602,7 @@ export default function ExpenseEntry(){
                   <Picker.Item 
                     key={site.site_id} 
                     value={site.site_id} 
-                    label={`${site.site_name} ${site.po_number} ? (PO: ${site.po_number}) : ""}`}
+                     label={`${site.site_name} ${site.po_number ? `(PO: ${site.po_number})` : ""}`} 
                   />
                 ))}
               </Picker>
