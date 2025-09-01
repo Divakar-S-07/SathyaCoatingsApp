@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./app/assets/logo.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -15,16 +15,14 @@
     "ios": {
       "supportsTablet": true
     },
-
     "android": {
-      
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.divaofficial.sathyaCoatings"
-      
     },
     "web": {
       "bundler": "metro",
@@ -35,8 +33,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "76ffec6e-01a1-4923-b4de-a72165c382b6"
+        "projectId": "64838f06-bb50-456a-a6f6-2f6132350ab2"
       }
-    }
+    },
+    "owner": "divakar01"
   }
 }
