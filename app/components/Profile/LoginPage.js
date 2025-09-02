@@ -11,7 +11,6 @@ import Toast from "react-native-toast-message";
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 import { useNavigation } from "@react-navigation/native";
-import Work from "../WorkModules/Work";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -30,18 +29,34 @@ function LoginPage() {
     }
 
     setLoading(true);
-    try {
-      const response = await axios.post("http://103.118.158.33/api/auth/login", {
-        email,
-        password,
-      });
 
-      const { token, encodedUserId, redirect } = response.data;
+    try {
+      console.log("📤 Sending login request:", { email, password });
+
+      //  If Postman uses raw JSON body
+      const response = await axios.post(
+        "http://103.118.158.33/api/auth/login",
+        { email, password },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("✅ Login response:", response.data);
+
+      const { token, encodedUserId, redirect, user } = response.data;
 
       // 🔒 Save token securely
       await SecureStore.setItemAsync("token", token);
       await SecureStore.setItemAsync("encodedUserId", encodedUserId);
       await SecureStore.setItemAsync("loginTime", Date.now().toString());
+
+
+      // save user details for profile modal
+      await SecureStore.setItemAsync("userEmail", user?.email || email);
+      await SecureStore.setItemAsync("userName", user?.name || "User");
 
       Toast.show({
         type: "success",
@@ -49,14 +64,16 @@ function LoginPage() {
       });
 
       navigation.replace("MainTabs");
-
-      
     } catch (error) {
-      console.error("Login error:", error);
+      console.error(" Login error:", error?.response?.data || error.message);
+
       Toast.show({
         type: "error",
         text1: "Login Failed",
-        text2: error.response?.data?.error || "Something went wrong",
+        text2:
+          error.response?.data?.error ||
+          error.response?.statusText ||
+          "Something went wrong",
       });
     } finally {
       setLoading(false);
@@ -114,8 +131,6 @@ function LoginPage() {
           </Text>
         )}
       </TouchableOpacity>
-
-      
 
       <Toast />
     </View>

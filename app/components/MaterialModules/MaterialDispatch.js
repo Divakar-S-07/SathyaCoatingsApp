@@ -255,6 +255,7 @@ const Material = () => {
           label="Project"
           value={projectData.find((p) => p.value === selectedProject)}
           onPress={() => setProjectModalVisible(true)}
+          
         />
         {/* Site */}
         <DropdownButton
@@ -265,7 +266,7 @@ const Material = () => {
           
         />
         {/* Filter Button */}
-        <View style={{ marginHorizontal: 4, marginTop: 20 }}>
+        {/* <View style={{ marginHorizontal: 4, marginTop: 20 }}>
           <TouchableOpacity
             onPress={() => console.log('Filter pressed')}
             style={{
@@ -281,7 +282,7 @@ const Material = () => {
           >
             <Text style={{ fontSize: 18, color: "#333" }}>⚙️</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </View>
 
       {/* Search Bar */}
@@ -376,8 +377,10 @@ const Material = () => {
         <FlatList
           data={filteredMaterials}
           keyExtractor={(item) => item.id?.toString()}
-          numColumns={3}
+          numColumns={2}
           renderItem={({ item }) => {
+
+
             // pick image by item name OR random fallback
             const imageUrl =
               itemImages[item.item_name] ||

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, TouchableOpacity, TextInput, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
+import Entypo from "@expo/vector-icons/Entypo";
 const isCompleted = (r) =>
   parseFloat(r?.completion_value) > 0 &&
   parseFloat(r?.completion_value).toFixed(2) === parseFloat(r?.value).toFixed(2);
@@ -36,27 +36,30 @@ export default function WorkItemCard({
     >
       <Text
         style={{
-          fontWeight: "700",
+          fontWeight: "900",
           fontSize: 16,
-          color: "#111827",
-          marginBottom: 4,
+          color: "#167a6f",
+          // marginBottom: 2,
         }}
-        className="p-2 text-center  border-b-[#aaa] border bg-gray-100"
+        className="p-2 text-center "
       >
         {item.subcategory_name}
       </Text>
+      
+      
 
 
-      <Text style={{ color: "#6b7280", fontSize: 12, marginBottom: 4 }}>
+
+      <Text style={{ color: "#6b7280", fontSize: 14, marginBottom: 4,textAlign: "center",fontWeight: 600 }}>
         Item: {item.item_id}
       </Text>
       <View
-        style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}
+        style={{ flexDirection: "row", alignItems: "center", marginBottom: 6,justifyContent: "center" }}
       >
         <Ionicons name="document-text-outline" size={16} color="#4f46e5" />
-        <Text style={{ marginLeft: 6, color: "#374151", fontSize: 13 }}>
+        {/* <Text style={{ marginLeft: 6, color: "#374151", fontSize: 13 }}>
           {item.work_descriptions}
-        </Text>
+        </Text> */}
       </View>
 
       {/* Progress as of selected date */}
@@ -65,7 +68,7 @@ export default function WorkItemCard({
           {/* <Text style={{ fontWeight: "600" }}>
             Progress as of {selectedDate}:
           </Text>{" "} */}
-          Area{" "}
+          Area : {" "}
           <Text style={{ fontWeight: "700" }}>
             {displayData.cumulative_area.toFixed(2)}
           </Text>{" "}
@@ -74,7 +77,7 @@ export default function WorkItemCard({
       </View>
 
       {/* Entries on selected date */}
-      {/* <View style={{ marginBottom: 10 }}>
+      <View style={{ marginBottom: 10 }}>
         <Text style={{ fontSize: 13, fontWeight: "600" }}>
           Entries on {selectedDate}:
         </Text>
@@ -91,7 +94,7 @@ export default function WorkItemCard({
             </Text>
           ))
         )}
-      </View> */}
+      </View>
 
       {/* Completed or Update */}
       {isCompleted(item) ? (
@@ -133,10 +136,31 @@ export default function WorkItemCard({
             color="#fff"
             style={{ marginRight: 6 }}
           />
-          <Text style={{ color: "#fff", fontWeight: "600" }}>Update Area</Text>
+          <Text style={{ color: "#fff", fontWeight: "600",fontSize: 12 }}>Update Area</Text>
         </TouchableOpacity>
       )}
-
+    
+        <TouchableOpacity
+                onPress={() => setShowModal(true)}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  // backgroundColor: "#1e7a6f",
+                  borderRadius: 8,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  marginTop: 5,
+                  borderWidth: 1,
+                  borderColor: "#167a6f"
+                }}
+              >
+                
+                <Entypo name="tools" size={16}
+                  // color="#fff"
+                  style={{ marginRight: 6 }}/>
+                <Text style={{  fontWeight: "600" ,fontSize: 12}}>Material Usage</Text>
+          </TouchableOpacity>
       {/* Update Modal */}
       <Modal visible={showModal} transparent animationType="fade">
         <View
