@@ -33,39 +33,45 @@ function LoginPage() {
     try {
       console.log("📤 Sending login request:", { email, password });
 
-      //  If Postman uses raw JSON body
+      // Login request
       const response = await axios.post(
         "http://103.118.158.33/api/auth/login",
         { email, password },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
 
       console.log("✅ Login response:", response.data);
 
-      const { token, encodedUserId, redirect, user } = response.data;
+      const { token, encodedUserId } = response.data;
 
-      // 🔒 Save token securely
+      // Save token + encodedUserId
       await SecureStore.setItemAsync("token", token);
       await SecureStore.setItemAsync("encodedUserId", encodedUserId);
       await SecureStore.setItemAsync("loginTime", Date.now().toString());
 
+      // 🔥 Verify token to fetch user profile
+      const verifyRes = await axios.post(
+        "http://103.118.158.33/api/auth/verify-token",
+        { token }
+      );
 
-      // save user details for profile modal
-      await SecureStore.setItemAsync("userEmail", user?.email || email);
-      await SecureStore.setItemAsync("userName", user?.name || "User");
+      const userProfile = verifyRes.data;
+      console.log("✅ Verified user profile:", userProfile);
+
+      // Save profile details
+      await SecureStore.setItemAsync("userName", userProfile.user_name);
+      await SecureStore.setItemAsync("userEmail", userProfile.user_email);
+      await SecureStore.setItemAsync("userRole", userProfile.role);
+      await SecureStore.setItemAsync("userId", String(userProfile.user_id));
 
       Toast.show({
         type: "success",
         text1: "Login successful!",
       });
 
-      navigation.replace("MainTabs");
+      navigation.replace("MainTabs"); // move to main app
     } catch (error) {
-      console.error(" Login error:", error?.response?.data || error.message);
+      console.error("❌ Login error:", error?.response?.data || error.message);
 
       Toast.show({
         type: "error",
