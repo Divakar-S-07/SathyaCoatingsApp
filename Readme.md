@@ -5,3 +5,4 @@ npm install lucide-react-native
 npm install react-native-svg
 npm install @react-native-picker/picker
 expo install expo-secure-store
+npx start

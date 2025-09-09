@@ -11,7 +11,6 @@ import Toast from "react-native-toast-message";
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 import { useNavigation } from "@react-navigation/native";
-import Work from "../WorkModules/Work";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -30,33 +29,57 @@ function LoginPage() {
     }
 
     setLoading(true);
+
     try {
-      const response = await axios.post("http://103.118.158.33/api/auth/login", {
-        email,
-        password,
-      });
+      console.log("📤 Sending login request:", { email, password });
 
-      const { token, encodedUserId, redirect } = response.data;
+      // Login request
+      const response = await axios.post(
+        "http://103.118.158.33/api/auth/login",
+        { email, password },
+        { headers: { "Content-Type": "application/json" } }
+      );
 
-      // 🔒 Save token securely
+      console.log("✅ Login response:", response.data);
+
+      const { token, encodedUserId } = response.data;
+
+      // Save token + encodedUserId
       await SecureStore.setItemAsync("token", token);
       await SecureStore.setItemAsync("encodedUserId", encodedUserId);
       await SecureStore.setItemAsync("loginTime", Date.now().toString());
+
+      // 🔥 Verify token to fetch user profile
+      const verifyRes = await axios.post(
+        "http://103.118.158.33/api/auth/verify-token",
+        { token }
+      );
+
+      const userProfile = verifyRes.data;
+      console.log("✅ Verified user profile:", userProfile);
+
+      // Save profile details
+      await SecureStore.setItemAsync("userName", userProfile.user_name);
+      await SecureStore.setItemAsync("userEmail", userProfile.user_email);
+      await SecureStore.setItemAsync("userRole", userProfile.role);
+      await SecureStore.setItemAsync("userId", String(userProfile.user_id));
 
       Toast.show({
         type: "success",
         text1: "Login successful!",
       });
 
-      navigation.replace("MainTabs");
-
-      
+      navigation.replace("MainTabs"); // move to main app
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("❌ Login error:", error?.response?.data || error.message);
+
       Toast.show({
         type: "error",
         text1: "Login Failed",
-        text2: error.response?.data?.error || "Something went wrong",
+        text2:
+          error.response?.data?.error ||
+          error.response?.statusText ||
+          "Something went wrong",
       });
     } finally {
       setLoading(false);
@@ -114,8 +137,6 @@ function LoginPage() {
           </Text>
         )}
       </TouchableOpacity>
-
-      
 
       <Toast />
     </View>
