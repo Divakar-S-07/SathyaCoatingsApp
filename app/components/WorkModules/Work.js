@@ -17,13 +17,321 @@ import UpdateModal from "./popupModels/UpdateModel";
 import ViewModel from "./popupModels/ViewModel";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
-const API = "http://103.118.158.33";
+const API = "http://10.151.144.28:5000";
 
 const formatDate = (d) =>
   d instanceof Date ? d.toISOString().split("T")[0] : d;
 
+// Material Usage Calculator Function
+const calculateMaterialUsage = (workItems, materials) => {
+  const materialUsage = {};
+  
+  materials.forEach(material => {
+    const poNumber = material.po_number || material.order_no;
+    
+    // Find matching work items for this PO
+    const relatedWorkItems = workItems.filter(work => work.po_number === poNumber);
+    
+    relatedWorkItems.forEach(workItem => {
+      const materialKey = `${material.id}_${workItem.rec_id}`;
+      
+      // Get work completion data
+      const completedArea = parseFloat(workItem.area_completed) || 0;
+      const totalArea = parseFloat(workItem.po_quantity) || 0;
+      const completionPercentage = totalArea > 0 ? (completedArea / totalArea) * 100 : 0;
+      
+      // Get material quantities
+      let totalMaterialQty = parseFloat(material.assigned_quantity) || 0;
+      const compAQty = parseFloat(material.comp_a_qty) || 0;
+      const compBQty = parseFloat(material.comp_b_qty) || 0;
+      const compCQty = parseFloat(material.comp_c_qty) || 0;
+      
+      const hasComponents = compAQty > 0 || compBQty > 0 || compCQty > 0;
+      if (hasComponents) {
+        totalMaterialQty = compAQty + compBQty + compCQty;
+      }
+      
+      // Calculate expected consumption based on work completion
+      const expectedConsumption = (totalMaterialQty * completionPercentage) / 100;
+      
+      // Unit standardization
+      let displayUnit = material.uom_name;
+      let normalizedQty = totalMaterialQty;
+      let normalizedExpected = expectedConsumption;
+      
+      if (material.uom_name === 'ML') {
+        normalizedQty = totalMaterialQty / 1000;
+        normalizedExpected = expectedConsumption / 1000;
+        displayUnit = 'LIT';
+      } else if (material.uom_name === 'GMS') {
+        normalizedQty = totalMaterialQty / 1000;
+        normalizedExpected = expectedConsumption / 1000;
+        displayUnit = 'KG';
+      }
+      
+      const remainingQty = normalizedQty - normalizedExpected;
+      const usageRate = normalizedQty > 0 ? (normalizedExpected / normalizedQty) * 100 : 0;
+      
+      // Determine status
+      let status = 'ADEQUATE';
+      if (completionPercentage >= 95) {
+        status = usageRate >= 80 ? 'COMPLETED_EFFICIENT' : 'UNDERUSED';
+      } else if (remainingQty < 0) {
+        status = 'SHORTAGE';
+      } else if (usageRate > 80 && completionPercentage < 60) {
+        status = 'HIGH_CONSUMPTION';
+      } else if (normalizedQty > normalizedExpected * 3) {
+        status = 'EXCESS_STOCK';
+      }
+      
+      materialUsage[materialKey] = {
+        materialId: material.id,
+        materialName: material.item_name,
+        dcNumber: material.dc_no,
+        dispatchDate: new Date(material.dispatch_date).toLocaleDateString(),
+        vendorCode: material.vendor_code,
+        
+        recId: workItem.rec_id,
+        categoryName: workItem.category_name,
+        subcategoryName: workItem.subcategory_name,
+        workDescription: workItem.work_descriptions,
+        
+        dispatchedQuantity: parseFloat(normalizedQty.toFixed(3)),
+        expectedConsumption: parseFloat(normalizedExpected.toFixed(3)),
+        remainingQuantity: parseFloat(remainingQty.toFixed(3)),
+        unit: displayUnit,
+        
+        completedArea: completedArea,
+        totalArea: totalArea,
+        completionPercentage: parseFloat(completionPercentage.toFixed(1)),
+        completionValue: parseFloat(workItem.completion_value) || 0,
+        
+        workRate: parseFloat(workItem.rate) || 0,
+        usageRate: parseFloat(usageRate.toFixed(1)),
+        status: status,
+        
+        components: hasComponents ? {
+          componentA: {
+            quantity: compAQty,
+            remarks: material.comp_a_remarks,
+            ratio: parseFloat(material.comp_ratio_a) || null,
+            expectedUsage: compAQty > 0 ? (compAQty * completionPercentage) / 100 : 0
+          },
+          componentB: {
+            quantity: compBQty,
+            remarks: material.comp_b_remarks,
+            ratio: parseFloat(material.comp_ratio_b) || null,
+            expectedUsage: compBQty > 0 ? (compBQty * completionPercentage) / 100 : 0
+          },
+          componentC: compCQty > 0 ? {
+            quantity: compCQty,
+            remarks: material.comp_c_remarks,
+            ratio: parseFloat(material.comp_ratio_c) || null,
+            expectedUsage: (compCQty * completionPercentage) / 100
+          } : null
+        } : null
+      };
+    });
+  });
+  
+  return materialUsage;
+};
+
+// Material Usage Dashboard Component
+const MaterialUsageDashboard = ({ materialUsage }) => {
+  const usageEntries = Object.entries(materialUsage);
+  
+  if (usageEntries.length === 0) return null;
+
+  const getStatusColor = (status) => {
+    const colors = {
+      'SHORTAGE': '#e74c3c',
+      'HIGH_CONSUMPTION': '#f39c12', 
+      'EXCESS_STOCK': '#3498db',
+      'COMPLETED_EFFICIENT': '#27ae60',
+      'UNDERUSED': '#9b59b6',
+      'ADEQUATE': '#95a5a6'
+    };
+    return colors[status] || '#95a5a6';
+  };
+
+  return (
+    <View style={{
+      backgroundColor: '#fff',
+      margin: 12,
+      padding: 16,
+      borderRadius: 10,
+      elevation: 3,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+        <Ionicons name="analytics" size={24} color="#1e7a6f" />
+        <Text style={{ 
+          fontSize: 18, 
+          fontWeight: 'bold', 
+          marginLeft: 8,
+          color: '#1e7a6f'
+        }}>
+          Material Usage Analysis
+        </Text>
+      </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {usageEntries.map(([key, data]) => (
+          <View key={key} style={{
+            backgroundColor: '#f8f9fa',
+            borderRadius: 8,
+            padding: 12,
+            marginRight: 12,
+            width: 280,
+            borderLeftWidth: 4,
+            borderLeftColor: getStatusColor(data.status)
+          }}>
+            <View style={{ marginBottom: 8 }}>
+              <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#2c3e50' }}>
+                {data.materialName}
+              </Text>
+              <Text style={{ fontSize: 12, color: '#7f8c8d' }}>
+                {data.subcategoryName} • DC#{data.dcNumber}
+              </Text>
+              <Text style={{ fontSize: 11, color: '#95a5a6' }}>
+                Dispatched: {data.dispatchDate}
+              </Text>
+            </View>
+
+            <View style={{ marginBottom: 8 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                <Text style={{ fontSize: 12, color: '#34495e' }}>Work Progress:</Text>
+                <Text style={{ fontSize: 12, fontWeight: '500', color: '#2c3e50' }}>
+                  {data.completionPercentage}%
+                </Text>
+              </View>
+              
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                <Text style={{ fontSize: 12, color: '#34495e' }}>Material Used:</Text>
+                <Text style={{ fontSize: 12, fontWeight: '500', color: '#2c3e50' }}>
+                  {data.expectedConsumption} {data.unit}
+                </Text>
+              </View>
+              
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                <Text style={{ fontSize: 12, color: '#34495e' }}>Remaining:</Text>
+                <Text style={{ 
+                  fontSize: 12, 
+                  fontWeight: '500', 
+                  color: data.remainingQuantity < 0 ? '#e74c3c' : '#27ae60'
+                }}>
+                  {data.remainingQuantity} {data.unit}
+                </Text>
+              </View>
+              
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontSize: 12, color: '#34495e' }}>Usage Rate:</Text>
+                <Text style={{ fontSize: 12, fontWeight: '500', color: '#2c3e50' }}>
+                  {data.usageRate}%
+                </Text>
+              </View>
+            </View>
+
+            <View style={{
+              backgroundColor: getStatusColor(data.status),
+              paddingHorizontal: 8,
+              paddingVertical: 4,
+              borderRadius: 12,
+              alignSelf: 'flex-start',
+              marginBottom: 8
+            }}>
+              <Text style={{ fontSize: 10, color: '#fff', fontWeight: 'bold' }}>
+                {data.status.replace('_', ' ')}
+              </Text>
+            </View>
+
+            {data.components && (
+              <View style={{ paddingTop: 8, borderTopWidth: 1, borderTopColor: '#ecf0f1' }}>
+                <Text style={{ fontSize: 11, fontWeight: 'bold', marginBottom: 4, color: '#34495e' }}>
+                  Components:
+                </Text>
+                {data.components.componentA.quantity > 0 && (
+                  <Text style={{ fontSize: 10, color: '#7f8c8d', marginBottom: 2 }}>
+                    A: {data.components.componentA.expectedUsage.toFixed(1)} / {data.components.componentA.quantity}
+                  </Text>
+                )}
+                {data.components.componentB.quantity > 0 && (
+                  <Text style={{ fontSize: 10, color: '#7f8c8d', marginBottom: 2 }}>
+                    B: {data.components.componentB.expectedUsage.toFixed(1)} / {data.components.componentB.quantity}
+                  </Text>
+                )}
+                {data.components.componentC && (
+                  <Text style={{ fontSize: 10, color: '#7f8c8d' }}>
+                    C: {data.components.componentC.expectedUsage.toFixed(1)} / {data.components.componentC.quantity}
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};
+
+// Material Alert Component
+const MaterialAlert = ({ materialUsage }) => {
+  const criticalIssues = Object.entries(materialUsage).filter(([_, data]) => 
+    data.status === 'SHORTAGE' || data.status === 'HIGH_CONSUMPTION'
+  );
+
+  if (criticalIssues.length === 0) return null;
+
+  return (
+    <View style={{
+      backgroundColor: '#fff3cd',
+      borderColor: '#ffeaa7',
+      borderWidth: 1,
+      borderRadius: 8,
+      padding: 12,
+      margin: 12,
+      marginBottom: 0
+    }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+        <Ionicons name="warning" size={20} color="#f39c12" />
+        <Text style={{ 
+          fontWeight: '600', 
+          color: '#856404', 
+          marginLeft: 8,
+          fontSize: 16 
+        }}>
+          Material Issues Detected
+        </Text>
+      </View>
+      
+      {criticalIssues.map(([key, data]) => (
+        <View key={key} style={{ 
+          backgroundColor: 'rgba(243, 156, 18, 0.1)',
+          padding: 8,
+          borderRadius: 6,
+          marginBottom: 6
+        }}>
+          <Text style={{ fontWeight: '500', color: '#856404' }}>
+            {data.materialName} ({data.subcategoryName})
+          </Text>
+          <Text style={{ color: '#856404', fontSize: 12 }}>
+            {data.status === 'SHORTAGE' 
+              ? `Shortage: Need ${Math.abs(data.remainingQuantity)} ${data.unit} more`
+              : `High consumption: ${data.usageRate}% used for ${data.completionPercentage}% work`
+            }
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+};
+
 export default function Work() {
-   const today = formatDate(new Date());
+  const today = formatDate(new Date());
 
   const [selectedWork, setSelectedWork] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,23 +357,23 @@ export default function Work() {
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [workDescLoading, setWorkDescLoading] = useState(false);
 
-  // DATE: keep as YYYY-MM-DD (same as website)
   const [selectedDate, setSelectedDate] = useState(today);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Per-date history for each rec_id: { [rec_id]: { cumulative_area, entries[] } }
   const [historyData, setHistoryData] = useState({});
-
   const [selectedWorkDesc, setSelectedWorkDesc] = useState(null);
+  const [materials, setMaterials] = useState([]);
+  
+  // Material Usage State
+  const [materialUsage, setMaterialUsage] = useState({});
 
-  // TODO: replace with your actual logged-in userId from auth
   const userId = 1;
 
   // Sites
   const fetchSites = async () => {
     try {
       setLoadingSites(true);
-      const res = await axios.get(`${API}/api/reckoner/sites`);
+      const res = await axios.get(`${API}/reckoner/sites`);
       if (res.data.success && Array.isArray(res.data.data)) {
         const options = res.data.data.map((site) => ({
           id: site.site_id,
@@ -90,7 +398,7 @@ export default function Work() {
     if (!selectedWork) return;
     try {
       setLoadingItems(true);
-      const res = await axios.get(`${API}/api/reckoner/reckoner/`);
+      const res = await axios.get(`${API}/reckoner/reckoner/`);
       const data =
         res.data.success && Array.isArray(res.data.data) ? res.data.data : [];
       const siteFiltered = data.filter(
@@ -98,18 +406,15 @@ export default function Work() {
       );
       setItems(siteFiltered);
 
-      // Get unique categories
       const uniqueCategories = [
         ...new Set(siteFiltered.map((i) => i.category_name)),
       ];
       setCategories(uniqueCategories);
 
       if (!preserveSelections) {
-        // 👇 Auto select first category instead of resetting
         if (uniqueCategories.length > 0) {
           setSelectedCategory(uniqueCategories[0]);
 
-          // Auto select first work description for that category
           const worksForFirstCat = siteFiltered.filter(
             (i) => i.category_name === uniqueCategories[0]
           );
@@ -135,13 +440,11 @@ export default function Work() {
     }
   };
 
-  // Filter items based on selected category
   const categoryFilteredItems = useMemo(() => {
     if (!selectedCategory) return [];
     return items.filter((item) => item.category_name === selectedCategory);
   }, [items, selectedCategory]);
 
-  // Get work descriptions based on selected category
   const workOptions = useMemo(() => {
     if (!categoryFilteredItems.length) return [];
     const uniqueWorks = [
@@ -150,7 +453,6 @@ export default function Work() {
     return uniqueWorks;
   }, [categoryFilteredItems]);
 
-  // Filter items based on selected work description
   useEffect(() => {
     if (!selectedCategory || !selectedWorkDesc) {
       setFilteredItems([]);
@@ -162,11 +464,10 @@ export default function Work() {
     }
   }, [categoryFilteredItems, selectedWorkDesc, selectedCategory]);
 
-  // History per rec_id for selectedDate
   const fetchHistoryData = async (rec_id, dateStr) => {
     try {
       const res = await axios.get(
-        `${API}/api/site-incharge/completion-entries`,
+        `${API}/site-incharge/completion-entries`,
         {
           params: { rec_id, date: dateStr },
         }
@@ -174,7 +475,7 @@ export default function Work() {
       if (res.data.status === "success") {
         setHistoryData((prev) => ({
           ...prev,
-          [rec_id]: res.data.data, // { cumulative_area, entries }
+          [rec_id]: res.data.data,
         }));
       } else {
         console.log("History fetch failed for", rec_id, res.data);
@@ -188,7 +489,45 @@ export default function Work() {
     }
   };
 
-  // INIT
+  // Fetch materials for selected site
+  const fetchMaterials = async () => {
+    if (!selectedWork) return;
+    try {
+      const res = await axios.get(`${API}/material/dispatch-details`, {
+        params: {
+          pd_id: selectedWork.po_number,
+          site_id: selectedWork.id,
+        },
+      });
+      if (res.data.success && Array.isArray(res.data.data)) {
+        setMaterials(res.data.data);
+      } else {
+        setMaterials([]);
+      }
+    } catch (err) {
+      console.log("Material fetch error:", err.response?.data || err.message);
+      setMaterials([]);
+    }
+  };
+
+  // Calculate Material Usage when items and materials change
+  useEffect(() => {
+    if (filteredItems.length && materials.length) {
+      const usage = calculateMaterialUsage(filteredItems, materials);
+      setMaterialUsage(usage);
+    } else {
+      setMaterialUsage({});
+    }
+  }, [filteredItems, materials]);
+
+  useEffect(() => {
+    if (selectedWork) {
+      fetchReckonerData();
+      fetchMaterials();
+      setSelectedDate(today);
+    }
+  }, [selectedWork]);
+
   useEffect(() => {
     fetchSites();
   }, []);
@@ -200,7 +539,6 @@ export default function Work() {
     }
   }, [selectedWork]);
 
-  // Re-fetch history when date or filtered items change
   useEffect(() => {
     if (!filteredItems.length || !selectedDate) return;
     filteredItems.forEach((r) => fetchHistoryData(r.rec_id, selectedDate));
@@ -211,7 +549,6 @@ export default function Work() {
     setNewWorkData((prev) => ({ ...prev, [rec_id]: value }));
   };
 
-  // Submit (date-aware)
   const handleSubmit = async (item) => {
     try {
       setSubmitting(true);
@@ -236,13 +573,12 @@ export default function Work() {
         entry_date: selectedDate,
       };
 
-      await axios.post(`${API}/api/site-incharge/completion-status`, payload);
+      await axios.post(`${API}/site-incharge/completion-status`, payload);
 
       alert("Entry added successfully");
 
       setNewWorkData((prev) => ({ ...prev, [item.rec_id]: "" }));
 
-      // 👇 Preserve selections after submit
       await fetchReckonerData(true);
       await fetchHistoryData(item.rec_id, selectedDate);
     } catch (err) {
@@ -285,9 +621,7 @@ export default function Work() {
 
   return (
     <>
-      {/* Site + Date */}
       <View style={{ margin: 12, padding: 8, backgroundColor: "#fff", paddingTop: 0 }}>
-        {/* Date Picker */}
         <View style={{ marginVertical: 10, flexDirection: "row", alignItems: "center" }}>
           <TouchableOpacity
             onPress={() => setShowDatePicker(true)}
@@ -311,15 +645,13 @@ export default function Work() {
             <Ionicons name="calendar" size={20} color="#888" />
           </TouchableOpacity>
 
-          
-
           {showDatePicker && (
             <DateTimePicker
               value={selectedDate ? new Date(selectedDate) : new Date()}
               mode="date"
               display="default"
-              minimumDate={new Date()}   // cannot pick before today
-              maximumDate={new Date()}   // cannot pick after today
+              minimumDate={new Date()}
+              maximumDate={new Date()}
               onChange={(event, date) => {
                 setShowDatePicker(false);
                 if (date) setSelectedDate(formatDate(date));
@@ -356,7 +688,6 @@ export default function Work() {
           </View>
         </View>
 
-        {/* Search */}
         <TextInput
           mode="outlined"
           label="Search"
@@ -376,11 +707,9 @@ export default function Work() {
           }
         />
 
-        {/* Category Chips - Without "All" */}
         <View style={{ marginTop: 10 }}>
           {categories.length > 0 && (
             <>
-              
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 4, marginBottom: 10 }}>
                 {categories.map((category, idx) => (
                   <TouchableOpacity
@@ -404,10 +733,8 @@ export default function Work() {
           )}
         </View>
 
-        {/* Work Description Dropdown - Only show if category is selected */}
         {selectedCategory && (
-          <View style={{  }}>
-            
+          <View style={{}}>
             <TouchableOpacity
               onPress={() => setWorkModalVisible(true)}
               style={{
@@ -429,7 +756,6 @@ export default function Work() {
               <Ionicons name="chevron-down" size={18} color="#888" />
             </TouchableOpacity>
 
-            {/* Clear Work Description Button */}
             {selectedWorkDesc && (
               <TouchableOpacity
                 onPress={() => setSelectedWorkDesc(null)}
@@ -446,7 +772,6 @@ export default function Work() {
               </TouchableOpacity>
             )}
 
-            {/* Work Modal */}
             <Modal visible={workModalVisible} transparent animationType="fade">
               <TouchableOpacity
                 style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", padding: 20 }}
@@ -485,6 +810,14 @@ export default function Work() {
           </View>
         )}
       </View>
+
+      {/* Material Usage Components */}
+      {selectedWork && Object.keys(materialUsage).length > 0 && (
+        <>
+          <MaterialAlert materialUsage={materialUsage} />
+          <MaterialUsageDashboard materialUsage={materialUsage} />
+        </>
+      )}
 
       {/* Site Modal */}
       <Modal visible={siteModalVisible} transparent animationType="fade">
@@ -580,7 +913,6 @@ export default function Work() {
                               : [],
                           }
                         : {
-                            // fallback to current if history not loaded
                             cumulative_area: parseFloat(item.area_completed) || 0,
                             entries: [],
                           };
@@ -595,6 +927,8 @@ export default function Work() {
                         onChange={handleNewWorkChange}
                         onSubmit={handleSubmit}
                         submitting={submitting}
+                        materials={materials}
+                        site={selectedWork}
                       />
                     );
                   })}
@@ -631,7 +965,7 @@ export default function Work() {
         )}
       </SafeAreaView>
 
-      {/* Modals (unchanged) */}
+      {/* Modals */}
       <ViewModel
         visible={viewVisible}
         onClose={() => setViewVisible(false)}

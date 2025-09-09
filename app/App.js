@@ -1,6 +1,6 @@
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./global.css";
-import { PaperProvider } from "react-native-paper";
+import { Button, PaperProvider } from "react-native-paper";
 import Work from "./components/WorkModules/Work";
 import Material from "./components/MaterialModules/MaterialDispatch";
 import { NavigationContainer } from "@react-navigation/native";
@@ -19,10 +19,13 @@ import ExpenseEntry from "./components/ExpenseModules/ExpenseEntry";
 import { useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
 
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function MainTabs({ navigation }) {
+  const [leaderBoardVisible,setLeaderBoardVisible] = useState(false);
   const [profileVisible, setProfileVisible] = useState(false);
   const [userData, setUserData] = useState({ email: "", name: "" });
 
@@ -67,12 +70,24 @@ function MainTabs({ navigation }) {
             </View>
           ),
           headerRight: () => (
-            <TouchableOpacity
-              onPress={() => setProfileVisible(true)}
-              className="items-center justify-center w-12 h-12 p-2 mr-4 rounded-full"
-            >
-              <Ionicons name="person-circle-outline" size={28} color="white" />
-            </TouchableOpacity>
+              <View className="flex flex-row items-center justify-between ">
+                {/* LeaderBoard */}
+                <TouchableOpacity className="mr-4" onPress={()=>setLeaderBoardVisible(true)}>
+                  <Icon name="leaderboard" size={32} color="#fff" />
+
+                </TouchableOpacity>
+                
+
+
+
+                {/* User Profile */}
+                <TouchableOpacity
+                onPress={() => setProfileVisible(true)}
+                className="items-center justify-center w-12 h-12 mr-4 rounded-full"
+              >
+                <Ionicons name="person-circle-outline" size={32} color="white" />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       >
@@ -109,39 +124,121 @@ function MainTabs({ navigation }) {
         />
       </Tab.Navigator>
 
-      {/* Profile Modal */}
+      {/* LeaderBoard Modal */}
       <Modal
-        transparent
-        visible={profileVisible}
-        animationType="fade"
-        onRequestClose={() => setProfileVisible(false)}
-      >
-        <View className="items-center justify-center flex-1 bg-black/50">
-          <View className="p-5 bg-white w-80 rounded-2xl">
-            <Text className="mb-3 text-lg font-bold text-center">Profile</Text>
-            <Text className="mb-1 text-base">Name: {userData.name || "N/A"}</Text>
-            <Text className="mb-4 text-base">
-              Email: {userData.email || "N/A"}
-            </Text>
+      transparent
+      visible={leaderBoardVisible}
+      onRequestClose={() => setLeaderBoardVisible(false)}
+    >
+      <View className="items-center justify-center flex-1 p-4 bg-black/60">
+        <View className="w-full max-w-md p-6 bg-white rounded-lg">
+          <Text className="mb-4 text-xl font-bold text-center">🏆 Site Engineer Leaderboard</Text>
+          
+          {/* Sample leaderboard data */}
+          <View className="mb-4">
+          {/* Header */}
+          <View className="flex-row py-3 bg-gray-200 border-b border-gray-300 rounded-t-md">
+            <Text className="flex-1 font-bold text-center text-gray-800">Rank</Text>
+            <Text className="flex-1 font-bold text-center text-gray-800">Name</Text>
+            <Text className="flex-1 font-bold text-center text-gray-800">Score</Text>
+          </View>
 
-            <TouchableOpacity
-              onPress={handleLogout}
-              className="py-3 bg-red-500 rounded-lg"
+          {/* Row 1 */}
+          <View className="flex-row py-2 border-b border-gray-100">
+            <Text className="flex-1 text-center">1.</Text>
+            <Text className="flex-1 text-center">Vimal</Text>
+            <Text className="flex-1 text-center">100</Text>
+          </View>
+
+          {/* Row 2 */}
+          <View className="flex-row py-2 border-b border-gray-100">
+            <Text className="flex-1 text-center">2.</Text>
+            <Text className="flex-1 text-center">Subash</Text>
+            <Text className="flex-1 text-center">50</Text>
+          </View>
+
+          {/* Row 3 */}
+          <View className="flex-row py-2">
+            <Text className="flex-1 text-center">3.</Text>
+            <Text className="flex-1 text-center">Bharath</Text>
+            <Text className="flex-1 text-center">10</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+               onPress={() => setLeaderBoardVisible(false)}
+              className="py-3 bg-gray-100 rounded-xl active:bg-gray-200"
+              activeOpacity={0.8}
             >
-              <Text className="font-semibold text-center text-white">
-                Logout
+              <Text className="font-medium text-center text-gray-700">
+                Close
               </Text>
             </TouchableOpacity>
+          
+          
+        </View>
+      </View>
+    </Modal>
 
+      {/* Profile Modal */}
+      <Modal
+      transparent
+      visible={profileVisible}
+      animationType="slide"
+      onRequestClose={() => setProfileVisible(false)}
+    >
+      <View className="items-center justify-center flex-1 bg-black/60">
+        <View className="mx-4 bg-white shadow-2xl w-96 rounded-3xl">
+          {/* Header */}
+          <View className="px-6 pt-6 pb-4 border-b border-gray-100">
+            <Text className="text-xl font-semibold text-center text-gray-800">
+              Profile Information
+            </Text>
+          </View>
+          
+          {/* Content */}
+          <View className="px-6 py-6 space-y-4">
+            {/* User Info Cards */}
+            <View className="p-4 bg-gray-50 rounded-xl">
+              <Text className="mb-1 text-sm font-medium text-gray-600">Name</Text>
+              <Text className="text-base font-semibold text-gray-900">
+                {userData.name || "Not provided"}
+              </Text>
+            </View>
+            
+            <View className="p-4 bg-gray-50 rounded-xl">
+              <Text className="mb-1 text-sm font-medium text-gray-600">Email</Text>
+              <Text className="text-base font-semibold text-gray-900">
+                {userData.email || "Not provided"}
+              </Text>
+            </View>
+          </View>
+          
+          {/* Actions */}
+          <View className="px-6 pb-6 space-y-3">
+            <TouchableOpacity
+              onPress={handleLogout}
+              className="py-4 bg-red-500 shadow-sm rounded-xl active:bg-red-600"
+              activeOpacity={0.8}
+            >
+              <Text className="font-semibold text-center text-white">
+                Sign Out
+              </Text>
+            </TouchableOpacity>
+            
             <TouchableOpacity
               onPress={() => setProfileVisible(false)}
-              className="py-2 mt-3"
+              className="py-3 bg-gray-100 rounded-xl active:bg-gray-200"
+              activeOpacity={0.8}
             >
-              <Text className="text-center text-gray-600">Close</Text>
+              <Text className="font-medium text-center text-gray-700">
+                Close
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
+      </View>
+    </Modal>
     </>
   );
 }
@@ -152,7 +249,7 @@ export default function App() {
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {/* Login First */}
-          <Stack.Screen name="Login" component={LoginPage} />
+          {/* <Stack.Screen name="Login" component={LoginPage} /> */}
           <Stack.Screen name="MainTabs" component={MainTabs} />
         </Stack.Navigator>
       </NavigationContainer>
