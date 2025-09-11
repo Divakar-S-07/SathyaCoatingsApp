@@ -17,7 +17,7 @@ import UpdateModal from "./popupModels/UpdateModel";
 import ViewModel from "./popupModels/ViewModel";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
-const API = "http://10.151.144.28:5000";
+const API = "http://103.118.158.127/api";
 
 const formatDate = (d) =>
   d instanceof Date ? d.toISOString().split("T")[0] : d;

@@ -68,7 +68,7 @@ export default function ExpenseEntry(){
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://10.151.144.28:5000/material/projects");
+      const response = await axios.get("http://103.118.158.127/api/material/projects");
       setProjects(Array.isArray(response.data.data) ? response.data.data : []);
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -81,7 +81,7 @@ export default function ExpenseEntry(){
   const fetchSites = async (pd_id) => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://10.151.144.28:5000/material/sites/${pd_id}`);
+      const response = await axios.get(`http://103.118.158.127/api/material/sites/${pd_id}`);
       setSites(Array.isArray(response.data.data) ? response.data.data : []);
     } catch (error) {
       console.error("Error fetching sites:", error);
@@ -98,7 +98,7 @@ export default function ExpenseEntry(){
       const token = await AsyncStorage.getItem("token");
       
       const response = await axios.post(
-        "http://10.151.144.28:5000/expense/fetch-petty-cash-by-site",
+        "http://103.118.158.127/api/expense/fetch-petty-cash-by-site",
         { site_id },
         {
           headers: {
@@ -121,7 +121,7 @@ export default function ExpenseEntry(){
       // Fetch expenses for each record
       const expensesPromises = records.map((record) =>
         axios.post(
-          "http://10.151.144.28:5000/expense/fetch-expenses-by-petty-cash",
+          "http://103.118.158.127/api/expense/fetch-expenses-by-petty-cash",
           { petty_cash_id: record.id },
           {
             headers: {
@@ -153,7 +153,7 @@ export default function ExpenseEntry(){
   const fetchCategories = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
-      const response = await axios.get("http://10.151.144.28:5000/expense/categories", {
+      const response = await axios.get("http://103.118.158.127/api/expense/categories", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -170,7 +170,7 @@ export default function ExpenseEntry(){
       setLoading(true);
       const token = await AsyncStorage.getItem("token");
       const response = await axios.post(
-        "http://10.151.144.28:5000/expense/fetch-details",
+        "http://103.118.158.127/api/expense/fetch-details",
         { exp_category_id: parseInt(exp_category_id) },
         {
           headers: {
@@ -306,7 +306,7 @@ export default function ExpenseEntry(){
       const token = await AsyncStorage.getItem("token");
       
       const response = await axios.post(
-        "http://10.151.144.28:5000/expense/upload-image",
+        "http://103.118.158.127/api/expense/upload-image",
         formData,
         {
           headers: {
@@ -368,7 +368,7 @@ export default function ExpenseEntry(){
       };
 
       const response = await axios.post(
-        "http://10.151.144.28:5000/expense/add-siteincharge-expense",
+        "http://103.118.158.127/api/expense/add-siteincharge-expense",
         requestData,
         {
           headers: {

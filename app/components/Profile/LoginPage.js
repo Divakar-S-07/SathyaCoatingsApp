@@ -35,7 +35,7 @@ function LoginPage() {
 
       // Login request
       const response = await axios.post(
-        "http://10.151.144.28:5000/auth/login",
+        "http://103.118.158.127/api/auth/login",
         { email, password },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -51,7 +51,7 @@ function LoginPage() {
 
       //  Verify token to fetch user profile
       const verifyRes = await axios.post(
-        "http://10.151.144.28:5000/auth/verify-token",
+        "http://103.118.158.127/api/auth/verify-token",
         { token }
       );
 

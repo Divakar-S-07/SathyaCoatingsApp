@@ -59,7 +59,7 @@ const Material = () => {
   const fetchProjects = async () => {
     try {
       setLoading((prev) => ({ ...prev, projects: true }));
-      const response = await axios.get("http://10.151.144.28:5000/project/projects-with-sites");
+      const response = await axios.get("http://103.118.158.127/api/project/projects-with-sites");
       setProjects(response.data || []);
     } catch (error) {
       setError("Failed to load projects");
@@ -93,7 +93,7 @@ useEffect(() => {
     setLoading((prev) => ({ ...prev, materials: true }));
     try {
       const response = await axios.get(
-        `http://10.151.144.28:5000/material/dispatch-details/?pd_id=${selectedProject}&site_id=${selectedSite}`
+        `http://103.118.158.127/api/material/dispatch-details/?pd_id=${selectedProject}&site_id=${selectedSite}`
       );
       
       // Create a map to store unique dispatches by their ID (exactly like web)
@@ -112,7 +112,7 @@ useEffect(() => {
       // Fetch acknowledgement details for each dispatch (exactly like web)
       const ackPromises = uniqueDispatches.map(dispatch =>
         axios.get(
-          `http://10.151.144.28:5000/site-incharge/acknowledgement-details?material_dispatch_id=${dispatch.id}`
+          `http://103.118.158.127/api/site-incharge/acknowledgement-details?material_dispatch_id=${dispatch.id}`
         ).catch(err => ({ data: { data: [] } })) // Handle cases where no acknowledgement exists
       );
 
@@ -203,7 +203,7 @@ useEffect(() => {
     if (!ackData) return;
 
     try {
-      const response = await axios.post("http://10.151.144.28:5000/site-incharge/acknowledge-material", {
+      const response = await axios.post("http://103.118.158.127/api/site-incharge/acknowledge-material", {
         material_dispatch_id: parseInt(dispatchId),
         comp_a_qty: ackData.comp_a_qty !== "" ? parseInt(ackData.comp_a_qty) : null,
         comp_b_qty: ackData.comp_b_qty !== "" ? parseInt(ackData.comp_b_qty) : null,
@@ -217,7 +217,7 @@ useEffect(() => {
       
       // Refresh acknowledgement data for the specific dispatch (exactly like web)
       const responseRefresh = await axios.get(
-        `http://10.151.144.28:5000/site-incharge/acknowledgement-details?material_dispatch_id=${dispatchId}`
+        `http://103.118.158.127/api/site-incharge/acknowledgement-details?material_dispatch_id=${dispatchId}`
       );
       setAckDetails(prev => ({
         ...prev,

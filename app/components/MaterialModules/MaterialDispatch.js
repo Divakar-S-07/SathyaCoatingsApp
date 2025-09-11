@@ -14,7 +14,7 @@ import MaterialCard from "./MaterialCard";
 import ViewMaterial from "./ViewMaterial";
 import axios from "axios";
 
-const API_BASE = "http://10.151.144.28:5000";
+const API_BASE = "http://103.118.158.127/api";
 
 const Material = () => {
   const [selectedItem, setSelectedItem] = useState(null);
