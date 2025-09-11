@@ -1,10 +1,12 @@
 import React from 'react';
-import { TouchableOpacity, View, Text, Image } from 'react-native';
-import { Button } from 'react-native-paper'; // Better styled than RN Button
+import { TouchableOpacity, View, Text, Image, TextInput } from 'react-native';
+import { Button, Modal } from 'react-native-paper'; // Better styled than RN Button
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-const MaterialCard = ({ itemId, onView, onUpdate, image }) => {
+const MaterialCard = ({ itemId, onView, onUpdate, image, itemName }) => {
   return (
+    
+    
     <TouchableOpacity
       onPress={onView}
       style={{
@@ -31,16 +33,18 @@ const MaterialCard = ({ itemId, onView, onUpdate, image }) => {
         paddingHorizontal: 8,
         paddingVertical: 4,
         backgroundColor: '#1e7a6f',
-        position: 'relative'
+        position: 'relative',
+        height: 40
       }}>
         
         <Text style={{
           fontWeight: '500',
           textAlign: 'center',
           color: 'white',
-          fontSize: 14
+          fontSize: 10
         }}>
-          Item {itemId}
+          {/* Item {itemId} */}
+          {itemName}
         </Text>
       </View>
 

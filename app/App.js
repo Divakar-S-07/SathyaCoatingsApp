@@ -11,15 +11,17 @@ import Foundation from "@expo/vector-icons/Foundation";
 import Entypo from "@expo/vector-icons/Entypo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-
+import Feather from '@expo/vector-icons/Feather';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginPage from "./components/Profile/LoginPage";
 import ExpenseEntry from "./components/ExpenseModules/ExpenseEntry";
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 
 import { useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
 
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import LabourAssign from "./components/Labour/LabourAssign";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -96,14 +98,23 @@ function MainTabs({ navigation }) {
           component={ExpenseEntry}
           options={{
             tabBarIcon: ({ size, color }) => (
-              <MaterialCommunityIcons
-                name="cash-multiple"
-                size={size}
-                color={color}
-              />
+              <FontAwesome5 
+              name="rupee-sign" 
+              size={size} 
+              color={color} />
             ),
           }}
         />
+        <Tab.Screen
+          name="Materials"
+          component={Material}
+          options={{
+            tabBarIcon: ({ size, color }) => (
+              <Feather name="package" size={size} color={color} />
+            ),
+          }}
+        />
+        
         <Tab.Screen
           name="Work"
           component={Work}
@@ -113,13 +124,15 @@ function MainTabs({ navigation }) {
             ),
           }}
         />
-        <Tab.Screen
-          name="Materials"
-          component={Material}
+        
+        <Tab.Screen 
+          name="Assign"
+          component={LabourAssign}
           options={{
-            tabBarIcon: ({ size, color }) => (
-              <Entypo name="tools" size={size} color={color} />
-            ),
+            tabBarIcon: ({size, color}) => {{
+              return <Feather name="users" size={size} color={color} />
+
+            }}
           }}
         />
       </Tab.Navigator>
@@ -250,6 +263,7 @@ export default function App() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {/* Login First */}
           {/* <Stack.Screen name="Login" component={LoginPage} /> */}
+          
           <Stack.Screen name="MainTabs" component={MainTabs} />
         </Stack.Navigator>
       </NavigationContainer>

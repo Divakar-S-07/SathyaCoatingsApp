@@ -31,16 +31,16 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      console.log("📤 Sending login request:", { email, password });
+      console.log("Sending login request:", { email, password });
 
       // Login request
       const response = await axios.post(
-        "http://103.118.158.33/api/auth/login",
+        "http://10.151.144.28:5000/auth/login",
         { email, password },
         { headers: { "Content-Type": "application/json" } }
       );
 
-      console.log("✅ Login response:", response.data);
+      console.log("Login response:", response.data);
 
       const { token, encodedUserId } = response.data;
 
@@ -49,14 +49,14 @@ function LoginPage() {
       await SecureStore.setItemAsync("encodedUserId", encodedUserId);
       await SecureStore.setItemAsync("loginTime", Date.now().toString());
 
-      // 🔥 Verify token to fetch user profile
+      //  Verify token to fetch user profile
       const verifyRes = await axios.post(
-        "http://103.118.158.33/api/auth/verify-token",
+        "http://10.151.144.28:5000/auth/verify-token",
         { token }
       );
 
       const userProfile = verifyRes.data;
-      console.log("✅ Verified user profile:", userProfile);
+      console.log("Verified user profile:", userProfile);
 
       // Save profile details
       await SecureStore.setItemAsync("userName", userProfile.user_name);
@@ -71,7 +71,7 @@ function LoginPage() {
 
       navigation.replace("MainTabs"); // move to main app
     } catch (error) {
-      console.error("❌ Login error:", error?.response?.data || error.message);
+      console.error("Login error:", error?.response?.data || error.message);
 
       Toast.show({
         type: "error",
