@@ -77,7 +77,7 @@ const MaterialCard = ({ itemId, onView, onUpdate, image, itemName }) => {
       {/* Footer */}
       <View style={{ padding: 10 }}>
         <TouchableOpacity
-          onPress={onUpdate}
+          // onPress={onUpdate}
           style={{
             paddingVertical: 8,
             borderRadius: 8,
@@ -100,7 +100,7 @@ const MaterialCard = ({ itemId, onView, onUpdate, image, itemName }) => {
             textAlign: "center",
             color: "#1e7a6f"
           }}>
-            Update
+            Usage
           </Text>
         </TouchableOpacity>
       </View>

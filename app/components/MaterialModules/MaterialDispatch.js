@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FlatList,
   View,
   Modal,
   TouchableOpacity,
   Text,
-  ActivityIndicator,
   TextInput,
   ScrollView,
   Alert,
@@ -14,302 +13,264 @@ import MaterialCard from "./MaterialCard";
 import ViewMaterial from "./ViewMaterial";
 import axios from "axios";
 
-const API_BASE = "http://103.118.158.127/api";
-
 const Material = () => {
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [projectModalVisible, setProjectModalVisible] = useState(false);
-  const [siteModalVisible, setSiteModalVisible] = useState(false);
-
-  const [materials, setMaterials] = useState([]);
-  const [filteredMaterials, setFilteredMaterials] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [companies, setCompanies] = useState([]);
+  const [allProjects, setAllProjects] = useState([]);
   const [projects, setProjects] = useState([]);
   const [sites, setSites] = useState([]);
+  const [workDescriptions, setWorkDescriptions] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedSite, setSelectedSite] = useState(null);
-  const [dispatchedMaterials, setDispatchedMaterials] = useState([]);
+  const [selectedWorkDescription, setSelectedWorkDescription] = useState(null);
+  const [dispatchData, setDispatchData] = useState([]);
+  const [acknowledgements, setAcknowledgements] = useState({});
   const [ackDetails, setAckDetails] = useState({});
-  const [loading, setLoading] = useState({
-    projects: false,
-    materials: false,
-    sites: false,
-  });
-
-  const [updateQuantityModal, setUpdateQuantityModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
 
-  // simple modal inputs
-  const [quantityValue, setQuantityValue] = useState("");
-  const [remarksValue, setRemarksValue] = useState("");
+  // Modal states
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [acknowledgementModal, setAcknowledgementModal] = useState(false);
+  const [companyModalVisible, setCompanyModalVisible] = useState(false);
+  const [projectModalVisible, setProjectModalVisible] = useState(false);
+  const [siteModalVisible, setSiteModalVisible] = useState(false);
+  const [workDescModalVisible, setWorkDescModalVisible] = useState(false);
 
-  // --- Search filter ---
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredMaterials(materials);
-    } else {
-      const filtered = materials.filter((item) =>
-        (item.item_name || "").toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredMaterials(filtered);
+  // Fetch companies
+  const fetchCompanies = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get("http://103.118.158.127/api/project/companies");
+      setCompanies(response.data || []);
+    } catch (err) {
+      setError("Failed to fetch companies");
+      Alert.alert("Error", "Failed to fetch companies");
+    } finally {
+      setLoading(false);
     }
-  }, [searchQuery, materials]);
+  };
 
-  // --- Fetch Projects (with their sites) ---
+  // Fetch projects
   const fetchProjects = async () => {
     try {
-      setLoading((prev) => ({ ...prev, projects: true }));
-      const response = await axios.get(`${API_BASE}/project/projects-with-sites`);
-      // server returned array of projects (each with .sites)
-      setProjects(response.data || []); // keep original structure
+      setLoading(true);
+      const response = await axios.get("http://103.118.158.127/api/project/projects-with-sites");
+      setAllProjects(response.data || []);
     } catch (err) {
-      console.error("Failed to load projects", err);
-      setError("Failed to load projects");
+      setError("Failed to fetch projects");
+      Alert.alert("Error", "Failed to fetch projects");
     } finally {
-      setLoading((prev) => ({ ...prev, projects: false }));
+      setLoading(false);
+    }
+  };
+
+  // Fetch work descriptions
+  const fetchWorkDescriptions = async (site_id) => {
+    try {
+      setLoading(true);
+      const response = await axios.get("http://103.118.158.127/api/material/work-descriptions", {
+        params: { site_id },
+      });
+      setWorkDescriptions(response.data.data || []);
+    } catch (err) {
+      setError("Failed to fetch work descriptions");
+      Alert.alert("Error", "Failed to fetch work descriptions");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
+    fetchCompanies();
     fetchProjects();
   }, []);
 
-  // --- When project changes: populate sites, reset selections, auto-open site modal if sites exist ---
+  useEffect(() => {
+    if (selectedCompany) {
+      const filteredProjects = allProjects.filter((project) => project.company_id === selectedCompany.company_id);
+      setProjects(filteredProjects);
+      if (!filteredProjects.some((project) => project.project_id === (selectedProject?.project_id || ""))) {
+        setSelectedProject(null);
+        setSites([]);
+        setSelectedSite(null);
+        setWorkDescriptions([]);
+        setSelectedWorkDescription(null);
+        setDispatchData([]);
+        setAckDetails({});
+      }
+    } else {
+      setProjects([]);
+      setSelectedProject(null);
+      setSites([]);
+      setSelectedSite(null);
+      setWorkDescriptions([]);
+      setSelectedWorkDescription(null);
+      setDispatchData([]);
+      setAckDetails({});
+    }
+  }, [selectedCompany, allProjects]);
+
   useEffect(() => {
     if (selectedProject) {
-      const selectedProjectData = projects.find(
-        (project) => project.project_id === selectedProject
-      );
-      setSites(selectedProjectData ? selectedProjectData.sites || [] : []);
+      const selectedProjectData = allProjects.find(project => project.project_id === selectedProject.project_id);
+      setSites(selectedProjectData ? selectedProjectData.sites : []);
       setSelectedSite(null);
-      setMaterials([]);
-      setDispatchedMaterials([]);
+      setWorkDescriptions([]);
+      setSelectedWorkDescription(null);
+      setDispatchData([]);
       setAckDetails({});
-      // Auto-open site modal (same UX as Work.js)
-      if (selectedProjectData && Array.isArray(selectedProjectData.sites) && selectedProjectData.sites.length > 0) {
-        setSiteModalVisible(true);
-      }
     }
-  }, [selectedProject, projects]);
-
-  // --- Fetch Materials and ACK details for selected project & site ---
-  const fetchDispatchDetails = async () => {
-    if (!selectedProject || !selectedSite) return;
-
-    setLoading((prev) => ({ ...prev, materials: true }));
-    try {
-      const response = await axios.get(
-        `${API_BASE}/material/dispatch-details/?pd_id=${selectedProject}&site_id=${selectedSite}`
-      );
-
-      // Deduplicate dispatches by id (Map) — keep your existing approach
-      const dispatchMap = new Map();
-      (response.data.data || []).forEach((dispatch) => {
-        if (!dispatchMap.has(dispatch.id)) {
-          dispatchMap.set(dispatch.id, dispatch);
-        }
-      });
-      const uniqueDispatches = Array.from(dispatchMap.values());
-
-      setMaterials(uniqueDispatches);
-      setDispatchedMaterials(uniqueDispatches);
-
-      // Fetch acknowledgement details for each dispatch (parallel)
-      const ackPromises = uniqueDispatches.map((dispatch) =>
-        axios
-          .get(
-            `${API_BASE}/site-incharge/acknowledgement-details?material_dispatch_id=${dispatch.id}`
-          )
-          .catch((err) => {
-            // treat as empty ack if any error for a particular dispatch
-            return { data: { data: [] } };
-          })
-      );
-
-      const ackResponses = await Promise.all(ackPromises);
-      const ackMap = {};
-      ackResponses.forEach((ackResponse, index) => {
-        const dispatchId = uniqueDispatches[index].id;
-        const ackData = (ackResponse.data && ackResponse.data.data && ackResponse.data.data[0]) || null;
-        ackMap[dispatchId] = ackData;
-      });
-      setAckDetails(ackMap);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching dispatch details:", err);
-      setError("Failed to fetch dispatch or acknowledgement details");
-      setMaterials([]);
-      setDispatchedMaterials([]);
-    } finally {
-      setLoading((prev) => ({ ...prev, materials: false }));
-    }
-  };
+  }, [selectedProject, allProjects]);
 
   useEffect(() => {
-    if (selectedProject && selectedSite) {
+    if (selectedSite) {
+      fetchWorkDescriptions(selectedSite.site_id);
+      setSelectedWorkDescription(null);
+      setDispatchData([]);
+      setAckDetails({});
+    }
+  }, [selectedSite]);
+
+  useEffect(() => {
+    if (selectedProject && selectedSite && selectedWorkDescription) {
+      const fetchDispatchDetails = async () => {
+        setLoading(true);
+        try {
+          const response = await axios.get(
+            `http://103.118.158.127/api/material/dispatch-details/?pd_id=${selectedProject.project_id}&site_id=${selectedSite.site_id}&desc_id=${selectedWorkDescription.desc_id}`
+          );
+
+          const dispatchMap = new Map();
+          (response.data.data || []).forEach(dispatch => {
+            if (!dispatchMap.has(dispatch.id)) {
+              dispatchMap.set(dispatch.id, dispatch);
+            }
+          });
+
+          const uniqueDispatches = Array.from(dispatchMap.values());
+          setDispatchData(uniqueDispatches);
+
+          const ackPromises = uniqueDispatches.map(dispatch =>
+            axios.get(
+              `http://103.118.158.127/api/site-incharge/acknowledgement-details?material_dispatch_id=${dispatch.id}`
+            ).catch(err => ({ data: { data: [] } }))
+          );
+
+          const ackResponses = await Promise.all(ackPromises);
+          const ackMap = {};
+          ackResponses.forEach((ackResponse, index) => {
+            const dispatchId = uniqueDispatches[index].id;
+            const ackData = ackResponse.data.data[0] || null;
+            ackMap[dispatchId] = ackData;
+          });
+          setAckDetails(ackMap);
+          setError(null);
+        } catch (err) {
+          setError("Failed to fetch dispatch or acknowledgement details");
+          Alert.alert("Error", "Failed to fetch dispatch or acknowledgement details");
+        } finally {
+          setLoading(false);
+        }
+      };
       fetchDispatchDetails();
-    } else {
-      setMaterials([]);
-      setDispatchedMaterials([]);
     }
-  }, [selectedProject, selectedSite]);
+  }, [selectedProject, selectedSite, selectedWorkDescription]);
 
-  // Format project/site for dropdown usage
-  const projectData = projects.map((p) => ({
-    label: p?.project_name,
-    value: p?.project_id,
-  }));
+  const handleAcknowledge = async (dispatchId) => {
+    const ackData = acknowledgements[dispatchId];
+    if (!ackData) return;
 
-  const siteData = sites.map((s) => ({
-    label: s?.site_name,
-    value: s?.site_id,
-  }));
-
-  // --- Open update modal and prefill if existing ack present ---
-  const openUpdateQuantityModal = (item) => {
-    setSelectedItem(item);
-
-    // clear previous values
-    setQuantityValue("");
-    setRemarksValue("");
-
-    // If there's existing acknowledgment, prefill using existing structure
-    const existingAckRecord = ackDetails[item.id] || null;
-    const ackObj = existingAckRecord
-      ? existingAckRecord.acknowledgement
-        ? existingAckRecord.acknowledgement
-        : existingAckRecord
-      : null;
-
-    if (ackObj) {
-      // Prefer comp_a, fallback to comp_b, comp_c
-      setQuantityValue(
-        ackObj.comp_a_qty != null
-          ? String(ackObj.comp_a_qty)
-          : ackObj.comp_b_qty != null
-          ? String(ackObj.comp_b_qty)
-          : ackObj.comp_c_qty != null
-          ? String(ackObj.comp_c_qty)
-          : ""
+    try {
+      const response = await axios.post("http://103.118.158.127/api/site-incharge/acknowledge-material", {
+        material_dispatch_id: parseInt(dispatchId),
+        overall_quantity: ackData.overall_quantity !== "" ? parseInt(ackData.overall_quantity) : null,
+        remarks: ackData.remarks || null,
+      });
+      Alert.alert("Success", response.data.message);
+      
+      // Clear the acknowledgement input for this item
+      setAcknowledgements(prev => {
+        const newAck = { ...prev };
+        delete newAck[dispatchId];
+        return newAck;
+      });
+      
+      // Refresh acknowledgement data for the specific dispatch
+      const responseRefresh = await axios.get(
+        `http://103.118.158.127/api/site-incharge/acknowledgement-details?material_dispatch_id=${dispatchId}`
       );
-      setRemarksValue(
-        ackObj.comp_a_remarks || ackObj.comp_b_remarks || ackObj.comp_c_remarks || ""
-      );
+      setAckDetails(prev => ({
+        ...prev,
+        [dispatchId]: responseRefresh.data.data[0] || null
+      }));
+      
+      setAcknowledgementModal(false);
+    } catch (err) {
+      Alert.alert("Error", err.response?.data?.message || "Failed to save acknowledgement");
     }
-
-    setUpdateQuantityModal(true);
   };
 
-  // helper to get dispatched material object for selected item (used by ViewMaterial)
-  const getQuantityAndRemarksForItem = (itemId) => {
-    return dispatchedMaterials.find((material) => material.id === itemId) || null;
-  };
-
-  // --- Submit ack (simple single-component flow keeps your original payload) ---
-  const handleUpdateQuantity = async () => {
-  if (!selectedItem) return;
-
-  if (!quantityValue.trim()) {
-    Alert.alert("Validation", "Please enter a quantity value.");
-    return;
-  }
-
-  setSubmitting(true);
-  try {
-    const payload = {
-      material_dispatch_id: parseInt(selectedItem.id),
-      comp_a_qty: parseInt(quantityValue) || null,
-      comp_b_qty: null,
-      comp_c_qty: null,
-      comp_a_remarks: remarksValue || null,
-      comp_b_remarks: null,
-      comp_c_remarks: null,
-    };
-
-    // check if acknowledgement already exists
-    const existingAck = ackDetails[selectedItem.id];
-
-    let response;
-    if (existingAck) {
-  await axios.put(`${API_BASE}/site-incharge/acknowledge-material/${selectedItem.id}`, payload);
-} else {
-  await axios.post(`${API_BASE}/site-incharge/acknowledge-material`, payload);
-}
-
-
-    Alert.alert("Success", response.data.message || "Acknowledgement saved");
-
-    // refresh ack details
-    const responseRefresh = await axios.get(
-      `${API_BASE}/site-incharge/acknowledgement-details?material_dispatch_id=${selectedItem.id}`
-    );
-    setAckDetails((prev) => ({
+  const handleAckInputChange = (dispatchId, field, value) => {
+    setAcknowledgements(prev => ({
       ...prev,
-      [selectedItem.id]: responseRefresh.data.data[0] || null,
+      [dispatchId]: {
+        ...prev[dispatchId],
+        [field]: value
+      }
     }));
-
-    setUpdateQuantityModal(false);
-    setQuantityValue("");
-    setRemarksValue("");
-    setSelectedItem(null);
-  } catch (err) {
-    console.error("Error saving acknowledgement:", err.response?.data || err.message);
-    Alert.alert(
-      "Error",
-      err.response?.data?.message || "Failed to save acknowledgement"
-    );
-  } finally {
-    setSubmitting(false);
-  }
-};
-
-
-  // --- Is item acknowledged? (checks any comp qty present) ---
-  const isItemAcknowledged = (itemId) => {
-    const ack = ackDetails[itemId];
-    const maybe = ack && (ack.acknowledgement ? ack.acknowledgement : ack);
-    return !!maybe && (maybe.comp_a_qty != null || maybe.comp_b_qty != null || maybe.comp_c_qty != null);
   };
 
-  // Close update modal
-  const closeUpdateModal = () => {
-    setUpdateQuantityModal(false);
-    setQuantityValue("");
-    setRemarksValue("");
-    setSelectedItem(null);
+  const openAcknowledgementModal = (item) => {
+    setSelectedItem(item);
+    // Initialize with existing acknowledgement data or empty strings
+    const existingAck = ackDetails[item.id] && ackDetails[item.id].acknowledgement;
+    setAcknowledgements(prev => ({
+      ...prev,
+      [item.id]: {
+        overall_quantity: existingAck ? existingAck.overall_quantity?.toString() || "" : "",
+        remarks: existingAck ? existingAck.remarks || "" : ""
+      }
+    }));
+    setAcknowledgementModal(true);
   };
 
-  // --- Reusable dropdown-button & modal UI (kept inside this file as requested) ---
+  const formatItemAndRatios = (dispatch) => {
+    const ratios = [dispatch.comp_ratio_a, dispatch.comp_ratio_b];
+    if (dispatch.comp_ratio_c !== null) {
+      ratios.push(dispatch.comp_ratio_c);
+    }
+    return `${dispatch.item_name} (${ratios.join(':')})`;
+  };
+
+  // Reusable dropdown components
   const DropdownButton = ({ label, value, onPress, disabled }) => (
-  <View className="mb-2">
-    <Text className="mb-2 text-sm font-medium text-[#000]">{label}</Text>
-    <TouchableOpacity
-      disabled={disabled}
-      onPress={onPress}
-      className={`h-12 border rounded-lg justify-center px-4 w-full ${
-        disabled
-          ? "bg-gray-100 border-gray-300"
-          : "bg-white border-gray-400 shadow-md"
-      }`}
-    >
-      <View className="flex-row items-center justify-between">
-        <Text
-          className={`text-base ${
-            !value ? "text-gray-400" : disabled ? "text-gray-500" : "text-black"
-          }`}
-        >
-          {value ? value.label : `Select ${label}`}
-        </Text>
-        
-      </View>
-    </TouchableOpacity>
-  </View>
-);
+    <View className="mb-2">
+      <Text className="mb-2 text-sm font-medium text-[#000]">{label}</Text>
+      <TouchableOpacity
+        disabled={disabled}
+        onPress={onPress}
+        className={`h-12 border rounded-lg justify-center px-4 w-full ${
+          disabled
+            ? "bg-gray-100 border-gray-300"
+            : "bg-white border-gray-400 shadow-md"
+        }`}
+      >
+        <View className="flex-row items-center justify-between">
+          <Text
+            className={`text-base ${
+              !value ? "text-gray-400" : disabled ? "text-gray-500" : "text-black"
+            }`}
+          >
+            {value ? value.company_name || value.project_name || value.site_name || value.desc_name : `Select ${label}`}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
 
-
-  const DropdownModal = ({ visible, onClose, data, onSelect, title }) => (
+  const DropdownModal = ({ visible, onClose, data, onSelect, title, keyProp }) => (
     <Modal visible={visible} transparent animationType="fade">
       <View className="flex-1 bg-black/60">
         <TouchableOpacity
@@ -328,7 +289,7 @@ const Material = () => {
 
             <FlatList
               data={data}
-              keyExtractor={(item) => String(item.value)}
+              keyExtractor={(item) => String(item[keyProp])}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => {
@@ -337,7 +298,9 @@ const Material = () => {
                   }}
                   className="px-6 py-4 border-b border-gray-100 active:bg-gray-50"
                 >
-                  <Text className="text-base text-gray-800">{item.label}</Text>
+                  <Text className="text-base text-gray-800">
+                    {item.company_name || item.project_name || item.site_name || item.desc_name}
+                  </Text>
                 </TouchableOpacity>
               )}
               showsVerticalScrollIndicator={true}
@@ -358,188 +321,231 @@ const Material = () => {
 
   return (
     <View className="flex-1 p-3 bg-gray-100">
-      {/* Header with Project + Site Selection */}
-      <View className="bg-[#fff] px-2 py-4 rounded-xl mb-2">
-      <View className="">
-        {/* Project Dropdown */}
-        <DropdownButton
-          label="Project"
-          value={projectData.find((p) => p.value === selectedProject)}
-          onPress={() => setProjectModalVisible(true)}
-        />
+      {/* Header with Company, Project, Site, Work Description Selection */}
+      <View className="bg-[#fff] px-6 py-4 rounded-xl mb-2">
+        <View className="">
+          
+          
 
-        
+          <DropdownButton
+            label="Project"
+            value={selectedProject}
+            onPress={() => setProjectModalVisible(true)}
+            disabled={!selectedCompany}
+          />
 
-        {/* Site Dropdown */}
-        <DropdownButton
-          label="Select site"
-          value={siteData.find((s) => s.value === selectedSite)}
-          onPress={() => setSiteModalVisible(true)}
-          disabled={!selectedProject}
-        />
+          <DropdownButton
+            label="Site"
+            value={selectedSite}
+            onPress={() => setSiteModalVisible(true)}
+            disabled={!selectedProject}
+          />
+
+          <DropdownButton
+            label="Work Description"
+            value={selectedWorkDescription}
+            onPress={() => setWorkDescModalVisible(true)}
+            disabled={!selectedSite}
+          />
+        </View>
       </View>
 
+      {/* Dropdown Modals */}
+      <DropdownModal
+        visible={companyModalVisible}
+        onClose={() => setCompanyModalVisible(false)}
+        data={companies}
+        title="Select Company"
+        keyProp="company_id"
+        onSelect={(item) => setSelectedCompany(item)}
+      />
 
-      {/* Search Bar */}
-      <View className="flex-row items-center h-12 px-4 mb-6 bg-white border border-gray-200 shadow-sm rounded-xl">
-        <Text className="mr-3 text-lg text-gray-400">🔍</Text>
-        <TextInput
-          className="flex-1 text-base text-gray-800"
-          placeholder="Search materials..."
-          placeholderTextColor="#9CA3AF"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCorrect={false}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity
-            onPress={() => setSearchQuery("")}
-            className="p-1 ml-2"
-          >
-            <Text className="text-lg text-gray-400">✕</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      </View>
-
-      {/* Project Modal */}
       <DropdownModal
         visible={projectModalVisible}
         onClose={() => setProjectModalVisible(false)}
-        data={projectData}
+        data={projects}
         title="Select Project"
-        onSelect={(item) => {
-          setSelectedProject(item.value);
-          setSelectedSite(null);
-          setTimeout(() => {
-          setSiteModalVisible(true);
-        }, 300);
-        }}
-
-        
+        keyProp="project_id"
+        onSelect={(item) => setSelectedProject(item)}
       />
 
-      {/* Site Modal */}
       <DropdownModal
         visible={siteModalVisible}
         onClose={() => setSiteModalVisible(false)}
-        data={siteData}
+        data={sites}
         title="Select Site"
-        onSelect={(item) => setSelectedSite(item.value)}
+        keyProp="site_id"
+        onSelect={(item) => setSelectedSite(item)}
       />
 
-      {/* Update Quantity Modal */}
-      <Modal visible={updateQuantityModal} transparent animationType="fade">
+      <DropdownModal
+        visible={workDescModalVisible}
+        onClose={() => setWorkDescModalVisible(false)}
+        data={workDescriptions}
+        title="Select Work Description"
+        keyProp="desc_id"
+        onSelect={(item) => setSelectedWorkDescription(item)}
+      />
+
+      {/* Acknowledgement Modal - ALWAYS SHOWS INPUTS */}
+      <Modal visible={acknowledgementModal} transparent animationType="fade">
         <View className="items-center justify-center flex-1 p-5 bg-black/50">
-          <View className="w-full p-5 bg-white rounded-2xl">
-            <Text className="mb-3 text-base font-bold text-gray-800">
-              Update Quantity
-            </Text>
+          <View className="w-full max-h-[80%] p-5 bg-white rounded-2xl">
+            
 
-            <TextInput
-              keyboardType="numeric"
-              placeholder="Quantity val"
-              value={quantityValue}
-              onChangeText={setQuantityValue}
-              className="border border-gray-300 rounded-lg px-2.5 py-2 mb-4"
-            />
+            {selectedItem && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View className="p-3 mb-4 rounded-lg bg-gray-50">
+                  <Text className="mb-2 text-base font-semibold text-gray-800">
+                    {formatItemAndRatios(selectedItem)}
+                  </Text>
+                  
+                  {/* Dispatched Quantities */}
+                  <Text className="mb-2 text-sm font-medium text-gray-700">
+                    Dispatched Quantities:
+                  </Text>
+                  <View className="space-y-1">
+                    {selectedItem.comp_a_qty !== null && (
+                      <Text className="text-sm text-gray-600">
+                        <Text className="font-medium">Comp A:</Text> {selectedItem.comp_a_qty}
+                      </Text>
+                    )}
+                    {selectedItem.comp_b_qty !== null && (
+                      <Text className="text-sm text-gray-600">
+                        <Text className="font-medium">Comp B:</Text> {selectedItem.comp_b_qty}
+                      </Text>
+                    )}
+                    {selectedItem.comp_c_qty !== null && (
+                      <Text className="text-sm text-gray-600">
+                        <Text className="font-medium">Comp C:</Text> {selectedItem.comp_c_qty}
+                      </Text>
+                    )}
+                  </View>
+                </View>
 
-            <TextInput
-              placeholder="Add Remarks"
-              value={remarksValue}
-              onChangeText={setRemarksValue}
-              className="border border-gray-300 rounded-lg px-2.5 py-2 mb-4"
-            />
+                {/* Input Form - ALWAYS VISIBLE */}
+                <View className="space-y-3">
+                  <View>
+                    <Text className="mb-1 text-sm font-medium text-gray-600">
+                      Overall Quantity Received
+                    </Text>
+                    <TextInput
+                      keyboardType="numeric"
+                      placeholder="Enter overall quantity received"
+                      value={acknowledgements[selectedItem.id]?.overall_quantity || ""}
+                      onChangeText={(value) => handleAckInputChange(selectedItem.id, 'overall_quantity', value)}
+                      className="p-3 bg-white border border-gray-400 rounded-lg"
+                      maxLength={10}
+                    />
+                  </View>
 
-            <View className="flex-row justify-end">
-              <TouchableOpacity
-                onPress={closeUpdateModal}
-                disabled={submitting}
-                className="py-2 px-3 mr-2.5 rounded-lg bg-gray-400"
-              >
-                <Text className="text-white">Cancel</Text>
-              </TouchableOpacity>
+                  <View>
+                    <Text className="mb-1 text-sm font-medium text-gray-600">
+                      Remarks (Optional)
+                    </Text>
+                    <TextInput
+                      placeholder="Add any remarks about the received material"
+                      value={acknowledgements[selectedItem.id]?.remarks || ""}
+                      onChangeText={(value) => handleAckInputChange(selectedItem.id, 'remarks', value)}
+                      className="p-3 bg-white border border-gray-400 rounded-lg"
+                      multiline
+                      numberOfLines={3}
+                      textAlignVertical="top"
+                    />
+                  </View>
 
-              <TouchableOpacity
-                onPress={handleUpdateQuantity}
-                disabled={submitting}
-                className="px-3 py-2 bg-teal-600 rounded-lg"
-              >
-                {submitting ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text className="text-white">Save</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+                  <TouchableOpacity
+                    onPress={() => handleAcknowledge(selectedItem.id)}
+                    disabled={
+                      !acknowledgements[selectedItem.id] || 
+                      (!acknowledgements[selectedItem.id].overall_quantity && !acknowledgements[selectedItem.id].remarks)
+                    }
+                    className={`px-4 py-3 rounded-lg mt-2 ${
+                      (!acknowledgements[selectedItem.id] || 
+                       (!acknowledgements[selectedItem.id].overall_quantity && !acknowledgements[selectedItem.id].remarks))
+                        ? 'bg-gray-300' 
+                        : 'bg-indigo-600'
+                    }`}
+                  >
+                    <Text className="font-semibold text-center text-white">
+                      Save Acknowledgement
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+
+            <TouchableOpacity
+              onPress={() => setAcknowledgementModal(false)}
+              className="py-3 mt-4 bg-gray-400 rounded-lg"
+            >
+              <Text className="font-semibold text-center text-white">Close</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Materials List */}
-      {loading.materials ? (
+      {loading && (
         <View className="items-center justify-center flex-1">
-          <ActivityIndicator size="large" color="#0D9488" />
-          <Text className="mt-3 text-gray-500">Loading materials...</Text>
+          <Text className="text-base text-gray-600">Loading...</Text>
         </View>
-      ) : filteredMaterials.length === 0 ? (
+      )}
+      
+      {error && (
         <View className="items-center justify-center flex-1">
-          {materials.length === 0 ? (
-            <Text className="text-base text-center text-gray-500">
-              No materials found. Select Project & Site.
-            </Text>
-          ) : (
-            <View className="items-center">
-              <Text className="mb-3 text-base text-center text-gray-500">
-                No materials match "{searchQuery}"
-              </Text>
-              <TouchableOpacity
-                onPress={() => setSearchQuery("")}
-                className="px-4 py-2 bg-blue-500 rounded-lg"
-              >
-                <Text className="font-semibold text-white">Clear Search</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          <Text className="text-base text-red-600">{error}</Text>
+        </View>
+      )}
+
+      {/* Materials List */}
+      {dispatchData.length === 0 && !loading ? (
+        <View className="items-center justify-center flex-1">
+          <Text className="text-base text-center text-gray-500">
+            No materials found. Select Company, Project, Site & Work Description.
+          </Text>
         </View>
       ) : (
         <FlatList
-          data={filteredMaterials}
+          data={dispatchData}
           keyExtractor={(item) => item.id?.toString()}
           numColumns={2}
           columnWrapperStyle={{ justifyContent: "space-between" }}
-          renderItem={({ item }) => {
-            const isAcknowledged = isItemAcknowledged(item.id);
-            return (
-              <MaterialCard
-                itemId={item.id}
-                itemName={item.item_name}
-                isAcknowledged={isAcknowledged}
-                onView={() => {
-                  setSelectedItem(item);
-                  setModalVisible(true);
-                }}
-                onUpdate={() => openUpdateQuantityModal(item)}
-              />
-            );
-          }}
+          renderItem={({ item }) => (
+            <MaterialCard
+              itemId={item.id}
+              itemName={item.item_name}
+              isAcknowledged={ackDetails[item.id] && ackDetails[item.id].acknowledgement ? true : false}
+              onView={() => {
+                setSelectedItem(item);
+                setModalVisible(true);
+              }}
+              onUpdate={() => {
+                openAcknowledgementModal(item);
+              }}
+            />
+          )}
           showsVerticalScrollIndicator={false}
         />
       )}
 
-      {/* View Material Modal (keeps your props) */}
+      {/* View Material Modal */}
       <ViewMaterial
         visible={modalVisible}
         materialName={selectedItem?.item_name}
         item={selectedItem?.id}
-        selectedItemData={getQuantityAndRemarksForItem(selectedItem?.id)}
-        allDispatchedMaterials={dispatchedMaterials}
-        ackDetails={ackDetails[selectedItem?.id]}
+        selectedItemData={selectedItem}
+        allDispatchedMaterials={dispatchData}
+        ackDetails={ackDetails}
         onClose={() => setModalVisible(false)}
         onUpdate={() => {
           setModalVisible(false);
-          openUpdateQuantityModal(selectedItem);
+          openAcknowledgementModal(selectedItem);
         }}
+        onAcknowledge={() => {
+          setModalVisible(false);
+          openAcknowledgementModal(selectedItem);
+        }}
+        isAcknowledged={selectedItem && ackDetails[selectedItem.id] && ackDetails[selectedItem.id].acknowledgement ? true : false}
       />
     </View>
   );

@@ -47,11 +47,11 @@ export default function ViewMaterial({
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
             
-            <View className="flex flex-row ml-16">
+            <View className="flex flex-row ml-8">
               <Feather name="package" size={24} color="white" />
               <Text className="ml-2 font-bold text-white text-md">
                 
-                {Material?.title || 'Material Usage'}
+                {Material?.title || 'Material Acnowledgement'}
               </Text>
             </View>
           </View>
@@ -85,7 +85,7 @@ export default function ViewMaterial({
                 </View> */}
 
                 <View className="flex-row py-2">
-                  <Text className="flex-1 text-sm font-bold text-gray-900">Quantity & UOM</Text>
+                  <Text className="flex-1 text-sm font-bold text-gray-900">Total Quantity</Text>
                   <Text className="w-4 font-medium text-center text-gray-700">:</Text>
                   <Text className="flex-1 text-sm font-semibold text-gray-900">
                     {selectedItemData?.assigned_quantity || 'N/A'} {selectedItemData?.uom_name || ''}
@@ -158,7 +158,7 @@ export default function ViewMaterial({
             mode="contained"
             buttonColor="#dc2626"   // background color
             textColor="#ffffff"     // text color
-            style={{ borderRadius: 8, margin: 10 }}
+            style={{ borderRadius: 8, margin: 10 ,marginTop: 40}}
             onPress={onUpdate}
             >
               <Text className="font-bold">Update</Text>
