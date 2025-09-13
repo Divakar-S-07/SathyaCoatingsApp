@@ -87,13 +87,17 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.sathyacoatings"
+    namespace "com.divaofficial.sathyaCoatings"
     defaultConfig {
-        applicationId "com.sathyacoatings"
+        applicationId "com.divaofficial.sathyacoatings"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+    }
+    buildFeatures {
+        buildConfig true   // generates BuildConfig.java
+        resValues true     // ensures R.java is generated
     }
     signingConfigs {
         debug {

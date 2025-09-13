@@ -148,8 +148,8 @@ const apiService = {
     return response.data?.data || response.data || [];
   },
 
-  async fetchEmployees() {
-    const response = await apiClient.get('/site-incharge/employees');
+  async fetchLabours() {
+    const response = await apiClient.get('/site-incharge/labours');
     return response.data?.data || response.data || [];
   },
 
@@ -168,11 +168,11 @@ export default function LabourAssign({ route }) {
     projects: [],
     sites: [],
     workDescriptions: [],
-    employees: [],
+    labours: [],
     selectedProject: null,
     selectedSite: null,
     selectedWorkDesc: null,
-    selectedEmployees: [],
+    selectedLabours: [],
     fromDate: new Date(),
     toDate: new Date(),
     showFromPicker: false,
@@ -204,24 +204,24 @@ export default function LabourAssign({ route }) {
     })), [state.workDescriptions]
   );
 
-  const employeeOptions = useMemo(() =>
-    state.employees
-      .filter(emp => !state.selectedEmployees.includes(emp.emp_id))
-      .map(emp => ({
-        label: `${emp.emp_id} - ${emp.full_name}`,
-        value: emp.emp_id,
-      })), [state.employees, state.selectedEmployees]
+  const labourOptions = useMemo(() =>
+    state.labours
+      .filter(labour => !state.selectedLabours.includes(labour.id))
+      .map(labour => ({
+        label: `${labour.id} - ${labour.full_name}`,
+        value: labour.id,
+      })), [state.labours, state.selectedLabours]
   );
 
   const isFormValid = useMemo(() =>
     state.selectedProject &&
     state.selectedSite &&
     state.selectedWorkDesc &&
-    state.selectedEmployees.length > 0 &&
+    state.selectedLabours.length > 0 &&
     state.fromDate &&
     state.toDate &&
     state.toDate >= state.fromDate
-  , [state.selectedProject, state.selectedSite, state.selectedWorkDesc, state.selectedEmployees, state.fromDate, state.toDate]);
+  , [state.selectedProject, state.selectedSite, state.selectedWorkDesc, state.selectedLabours, state.fromDate, state.toDate]);
 
   // State update helper
   const updateState = useCallback((updates) => {
@@ -257,9 +257,9 @@ export default function LabourAssign({ route }) {
         sites: selectedProjectData?.sites || [],
         selectedSite: null,
         selectedWorkDesc: null,
-        selectedEmployees: [],
+        selectedLabours: [],
         workDescriptions: [],
-        employees: [],
+        labours: [],
       });
     }
   }, [state.selectedProject, state.projects, updateState]);
@@ -271,12 +271,12 @@ export default function LabourAssign({ route }) {
         try {
           updateState({ loading: true });
           
-          const [workDescriptions, employees] = await Promise.all([
+          const [workDescriptions, labours] = await Promise.all([
             apiService.fetchWorkDescriptions(state.selectedSite),
-            apiService.fetchEmployees(),
+            apiService.fetchLabours(),
           ]);
 
-          updateState({ workDescriptions, employees });
+          updateState({ workDescriptions, labours });
         } catch (error) {
           const message = handleApiError(error, 'fetch site data');
           Toast.show({ type: 'error', text1: message });
@@ -351,7 +351,7 @@ export default function LabourAssign({ route }) {
       project_id: state.selectedProject,
       site_id: state.selectedSite,
       desc_id: state.selectedWorkDesc,
-      emp_ids: state.selectedEmployees,
+      labour_ids: state.selectedLabours,
       from_date: state.fromDate.toISOString().split('T')[0],
       to_date: state.toDate.toISOString().split('T')[0],
       created_by: userId,
@@ -371,7 +371,7 @@ export default function LabourAssign({ route }) {
       // Reset form partially
       updateState({
         selectedWorkDesc: null,
-        selectedEmployees: [],
+        selectedLabours: [],
       });
 
     } catch (error) {
@@ -400,18 +400,18 @@ export default function LabourAssign({ route }) {
     }
   }, [updateState]);
 
-  // Employee management
-  const addEmployee = useCallback((empId) => {
+  // Labour management
+  const addLabour = useCallback((labourId) => {
     updateState({
-      selectedEmployees: [...state.selectedEmployees, empId],
+      selectedLabours: [...state.selectedLabours, labourId],
     });
-  }, [state.selectedEmployees, updateState]);
+  }, [state.selectedLabours, updateState]);
 
-  const removeEmployee = useCallback((empId) => {
+  const removeLabour = useCallback((labourId) => {
     updateState({
-      selectedEmployees: state.selectedEmployees.filter(id => id !== empId),
+      selectedLabours: state.selectedLabours.filter(id => id !== labourId),
     });
-  }, [state.selectedEmployees, updateState]);
+  }, [state.selectedLabours, updateState]);
 
   // Date change handlers
   const handleFromDateChange = useCallback((event, selectedDate) => {
@@ -431,16 +431,6 @@ export default function LabourAssign({ route }) {
       updateState({ toDate: selectedDate });
     }
   }, [updateState]);
-
-  // Get selected employee display text
-  const getSelectedEmployeesText = useCallback(() => {
-    return state.selectedEmployees
-      .map(id => {
-        const emp = state.employees.find(e => e.emp_id === id);
-        return emp ? `${emp.emp_id} - ${emp.full_name}` : String(id);
-      })
-      .join(', ');
-  }, [state.selectedEmployees, state.employees]);
 
   return (
     <ScrollView
@@ -473,16 +463,16 @@ export default function LabourAssign({ route }) {
             iconStyle={styles.iconStyle}
             data={projectOptions}
             search
-            maxHeight={300}
+            maxHeight={200}
             labelField="label"
             valueField="value"
-            placeholder="Select a project..."
-            searchPlaceholder="Search projects..."
+            placeholder="Select project"
+            searchPlaceholder="Search..."
             value={state.selectedProject}
             onChange={(item) => updateState({ selectedProject: item.value })}
             disable={state.loading}
             renderRightIcon={() => (
-              <Ionicons name="chevron-down" size={20} color="#6b7280" />
+              <Ionicons name="chevron-down" size={16} color="#64748b" />
             )}
           />
         </View>
@@ -504,16 +494,16 @@ export default function LabourAssign({ route }) {
             iconStyle={styles.iconStyle}
             data={siteOptions}
             search
-            maxHeight={300}
+            maxHeight={200}
             labelField="label"
             valueField="value"
-            placeholder="Select a site..."
-            searchPlaceholder="Search sites..."
+            placeholder="Select site"
+            searchPlaceholder="Search..."
             value={state.selectedSite}
             onChange={(item) => updateState({ selectedSite: item.value })}
             disable={!state.selectedProject || state.loading}
             renderRightIcon={() => (
-              <Ionicons name="chevron-down" size={20} color="#6b7280" />
+              <Ionicons name="chevron-down" size={16} color="#64748b" />
             )}
           />
         </View>
@@ -535,73 +525,73 @@ export default function LabourAssign({ route }) {
             iconStyle={styles.iconStyle}
             data={workDescOptions}
             search
-            maxHeight={300}
+            maxHeight={200}
             labelField="label"
             valueField="value"
-            placeholder="Select work description..."
-            searchPlaceholder="Search descriptions..."
+            placeholder="Select work description"
+            searchPlaceholder="Search..."
             value={state.selectedWorkDesc}
             onChange={(item) => updateState({ selectedWorkDesc: item.value })}
             disable={!state.selectedProject || !state.selectedSite || state.loading}
             renderRightIcon={() => (
-              <Ionicons name="chevron-down" size={20} color="#6b7280" />
+              <Ionicons name="chevron-down" size={16} color="#64748b" />
             )}
           />
         </View>
 
-        {/* Employee Selection */}
+        {/* Labour Selection */}
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>
-            Employees <Text style={styles.required}>*</Text>
+            Labours <Text style={styles.required}>*</Text>
           </Text>
           <Dropdown
             style={[
               styles.dropdown,
               (!state.selectedProject || !state.selectedSite || !state.selectedWorkDesc) && styles.dropdownDisabled,
-              state.selectedEmployees.length === 0 && state.selectedWorkDesc && styles.dropdownError,
+              state.selectedLabours.length === 0 && state.selectedWorkDesc && styles.dropdownError,
             ]}
             placeholderStyle={styles.placeholderStyle}
             selectedTextStyle={styles.selectedTextStyle}
             inputSearchStyle={styles.inputSearchStyle}
             iconStyle={styles.iconStyle}
-            data={employeeOptions}
+            data={labourOptions}
             search
-            maxHeight={300}
+            maxHeight={200}
             labelField="label"
             valueField="value"
-            placeholder="Select employees..."
-            searchPlaceholder="Search employees..."
+            placeholder="Add labours"
+            searchPlaceholder="Search..."
             value={null}
-            onChange={(item) => addEmployee(item.value)}
+            onChange={(item) => addLabour(item.value)}
             disable={!state.selectedProject || !state.selectedSite || !state.selectedWorkDesc || state.loading}
             renderRightIcon={() => (
-              <Ionicons name="people" size={20} color="#6b7280" />
+              <Ionicons name="add-circle-outline" size={16} color="#64748b" />
             )}
           />
 
-          {/* Selected Employees Display */}
-          {state.selectedEmployees.length > 0 && (
+          {/* Selected Labours Display */}
+          {state.selectedLabours.length > 0 && (
             <View style={styles.selectedContainer}>
               <Text style={styles.selectedTitle}>
-                Selected ({state.selectedEmployees.length})
+                Selected Labours ({state.selectedLabours.length})
               </Text>
               <ScrollView style={styles.selectedList} nestedScrollEnabled>
-                {state.selectedEmployees.map(empId => {
-                  const emp = state.employees.find(e => e.emp_id === empId);
+                {state.selectedLabours.map(labourId => {
+                  const labour = state.labours.find(l => l.id === labourId);
                   return (
-                    <View key={empId} style={styles.selectedItem}>
-                      <View style={styles.employeeInfo}>
-                        <Text style={styles.employeeId}>{empId}</Text>
-                        <Text style={styles.employeeName}>
-                          {emp?.full_name || 'Unknown'}
+                    <View key={labourId} style={styles.selectedItem}>
+                      <View style={styles.labourInfo}>
+                        <Text style={styles.labourId}>ID: {labourId}</Text>
+                        <Text style={styles.labourName}>
+                          {labour?.full_name || 'Unknown'}
                         </Text>
                       </View>
                       <TouchableOpacity
-                        onPress={() => removeEmployee(empId)}
+                        onPress={() => removeLabour(labourId)}
                         style={styles.removeButton}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       >
-                        <Ionicons name="close-circle" size={22} color="#ef4444" />
+                        <Ionicons name="close" size={18} color="#ef4444" />
                       </TouchableOpacity>
                     </View>
                   );
@@ -624,7 +614,7 @@ export default function LabourAssign({ route }) {
               <Text style={styles.dateText}>
                 {state.fromDate.toLocaleDateString()}
               </Text>
-              <Ionicons name="calendar-outline" size={20} color="#6b7280" />
+              <Ionicons name="calendar-outline" size={16} color="#64748b" />
             </TouchableOpacity>
           </View>
 
@@ -639,7 +629,7 @@ export default function LabourAssign({ route }) {
               <Text style={styles.dateText}>
                 {state.toDate.toLocaleDateString()}
               </Text>
-              <Ionicons name="calendar-outline" size={20} color="#6b7280" />
+              <Ionicons name="calendar-outline" size={16} color="#64748b" />
             </TouchableOpacity>
           </View>
         </View>
@@ -667,7 +657,7 @@ export default function LabourAssign({ route }) {
         {/* Loading Indicator */}
         {state.loading && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#059669" />
+            <ActivityIndicator size="small" color="#0f766e" />
             <Text style={styles.loadingText}>Loading data...</Text>
           </View>
         )}
@@ -686,10 +676,10 @@ export default function LabourAssign({ route }) {
             {state.submitting ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <Ionicons name="save" size={20} color="white" />
+              <Ionicons name="checkmark-circle" size={18} color="white" />
             )}
             <Text style={styles.saveButtonText}>
-              {state.submitting ? 'Saving Assignment...' : 'Save Assignment'}
+              {state.submitting ? 'Saving...' : 'Save Assignment'}
             </Text>
           </View>
         </TouchableOpacity>
@@ -706,151 +696,151 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   contentContainer: {
-    paddingVertical: 20,
+    paddingVertical: 16,
   },
   header: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
-    color: '#1f2937',
+    color: '#1e293b',
     textAlign: 'center',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
+    fontSize: 14,
+    color: '#64748b',
     textAlign: 'center',
     fontWeight: '400',
   },
   form: {
     backgroundColor: 'white',
     marginHorizontal: 16,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 12,
+    padding: 18,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
   fieldContainer: {
-    marginBottom: 24,
+    marginBottom: 18,
   },
   label: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#374151',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   required: {
     color: '#dc2626',
   },
   dropdown: {
-    height: 52,
-    borderWidth: 1.5,
+    height: 44,
+    borderWidth: 1,
     borderColor: '#d1d5db',
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    borderRadius: 8,
+    paddingHorizontal: 14,
     backgroundColor: 'white',
   },
   dropdownDisabled: {
-    backgroundColor: '#f9fafb',
-    borderColor: '#e5e7eb',
+    backgroundColor: '#f8fafc',
+    borderColor: '#e2e8f0',
   },
   dropdownError: {
     borderColor: '#dc2626',
   },
   placeholderStyle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#9ca3af',
   },
   selectedTextStyle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#111827',
     fontWeight: '500',
   },
   inputSearchStyle: {
-    height: 44,
-    fontSize: 16,
-    borderRadius: 8,
+    height: 40,
+    fontSize: 14,
+    borderRadius: 6,
   },
   iconStyle: {
-    width: 20,
-    height: 20,
+    width: 16,
+    height: 16,
   },
   selectedContainer: {
-    marginTop: 12,
+    marginTop: 10,
     backgroundColor: '#f0f9ff',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 8,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#bae6fd',
+    borderColor: '#e0f2fe',
   },
   selectedTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#0369a1',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   selectedList: {
-    maxHeight: 120,
+    maxHeight: 100,
   },
   selectedItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: 'white',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginBottom: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginBottom: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
   },
-  employeeInfo: {
+  labourInfo: {
     flex: 1,
   },
-  employeeId: {
-    fontSize: 14,
+  labourId: {
+    fontSize: 13,
     fontWeight: '600',
     color: '#1f2937',
   },
-  employeeName: {
-    fontSize: 13,
+  labourName: {
+    fontSize: 12,
     color: '#6b7280',
-    marginTop: 2,
+    marginTop: 1,
   },
   removeButton: {
-    padding: 4,
+    padding: 2,
   },
   dateContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 18,
   },
   dateField: {
     flex: 1,
-    marginHorizontal: 4,
+    marginHorizontal: 3,
   },
   dateInput: {
-    height: 52,
-    borderWidth: 1.5,
+    height: 44,
+    borderWidth: 1,
     borderColor: '#d1d5db',
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    borderRadius: 8,
+    paddingHorizontal: 14,
     backgroundColor: 'white',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   dateText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#111827',
     fontWeight: '500',
   },
@@ -858,29 +848,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 16,
   },
   loadingText: {
-    marginLeft: 12,
-    fontSize: 16,
-    color: '#6b7280',
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#64748b',
     fontWeight: '500',
   },
   saveButton: {
-    backgroundColor: '#059669',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    backgroundColor: '#0f766e',
+    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    shadowColor: '#0f766e',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
   },
   saveButtonDisabled: {
-    backgroundColor: '#9ca3af',
-    shadowColor: '#9ca3af',
-    shadowOpacity: 0.2,
+    backgroundColor: '#94a3b8',
+    shadowColor: '#94a3b8',
+    shadowOpacity: 0.15,
     elevation: 2,
   },
   buttonContent: {
@@ -890,8 +880,8 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: 'white',
-    fontSize: 18,
-    fontWeight: '700',
-    marginLeft: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
