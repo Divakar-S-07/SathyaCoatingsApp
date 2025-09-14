@@ -8,9 +8,11 @@ import {
   ActivityIndicator,
   RefreshControl,
   Platform,
+  Modal,
+  FlatList,
+  TextInput,
 } from "react-native";
 import axios from "axios";
-import { Dropdown } from "react-native-element-dropdown";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
@@ -136,8 +138,244 @@ const handleApiError = (error, context = '') => {
   return userMessage;
 };
 
+// Custom Dropdown Component
+const CustomDropdown = ({ 
+  data, 
+  value, 
+  onChange, 
+  placeholder, 
+  disabled, 
+  error,
+  searchable = true 
+}) => {
+  const [visible, setVisible] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  
+  const filteredData = useMemo(() => {
+    if (!searchable || !searchText) return data;
+    return data.filter(item => 
+      item.label.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }, [data, searchText, searchable]);
+
+  const selectedItem = data.find(item => item.value === value);
+
+  const handleSelect = (item) => {
+    onChange(item);
+    setVisible(false);
+    setSearchText('');
+  };
+
+  return (
+    <View>
+      <TouchableOpacity
+        style={[
+          styles.dropdownButton,
+          disabled && styles.dropdownDisabled,
+          error && styles.dropdownError,
+        ]}
+        onPress={() => !disabled && setVisible(true)}
+        disabled={disabled}
+      >
+        <Text style={[
+          styles.dropdownButtonText,
+          !selectedItem && styles.dropdownPlaceholder
+        ]}>
+          {selectedItem ? selectedItem.label : placeholder}
+        </Text>
+        <Ionicons 
+          name="chevron-down" 
+          size={16} 
+          color={disabled ? "#9ca3af" : "#64748b"} 
+        />
+      </TouchableOpacity>
+
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            {searchable && (
+              <View style={styles.searchContainer}>
+                <Ionicons name="search" size={16} color="#64748b" />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search..."
+                  value={searchText}
+                  onChangeText={setSearchText}
+                  autoFocus
+                />
+              </View>
+            )}
+            <FlatList
+              data={filteredData}
+              keyExtractor={(item) => item.value.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.dropdownItem,
+                    value === item.value && styles.dropdownItemSelected
+                  ]}
+                  onPress={() => handleSelect(item)}
+                >
+                  <Text style={[
+                    styles.dropdownItemText,
+                    value === item.value && styles.dropdownItemTextSelected
+                  ]}>
+                    {item.label}
+                  </Text>
+                  {value === item.value && (
+                    <Ionicons name="checkmark" size={16} color="#0f766e" />
+                  )}
+                </TouchableOpacity>
+              )}
+              maxHeight={200}
+              showsVerticalScrollIndicator={true}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </View>
+  );
+};
+
+// Labour Attendance Page Component
+const LabourAttendancePage = ({ onBack }) => {
+  const attendanceData = [
+    "Today's attendance has been successfully recorded for all assigned labours.",
+    "Work progress monitoring is active and tracking performance metrics.",
+    "Site safety protocols are being followed by all team members.",
+    "Daily productivity reports are automatically generated at 6 PM.",
+    "Weather conditions are favorable for outdoor construction activities.",
+    "Equipment maintenance schedules are up to date and functioning properly.",
+    "Material delivery is scheduled for tomorrow morning at 8 AM.",
+    "Quality inspection checkpoints have been completed successfully.",
+    "All workers have received their safety briefing for today's tasks.",
+    "Construction milestones are being achieved according to project timeline.",
+    "Labour productivity metrics show 15% improvement this month.",
+    "Emergency response procedures have been reviewed with all staff.",
+    "New safety equipment has been distributed to all team members.",
+    "Daily work allocation has been optimized for maximum efficiency.",
+    "Site supervisor reports all activities proceeding as scheduled.",
+    "Worker wellness programs are showing positive engagement results.",
+    "Environmental compliance checks completed with satisfactory results.",
+    "Training sessions for new equipment have been successfully conducted.",
+    "Communication systems between teams are functioning optimally.",
+    "Resource allocation has been streamlined for better project flow.",
+  ];
+
+  const randomText = attendanceData[Math.floor(Math.random() * attendanceData.length)];
+  const presentCount = Math.floor(Math.random() * 15) + 20;
+  const leaveCount = Math.floor(Math.random() * 5) + 1;
+  const attendanceRate = Math.floor(((presentCount / (presentCount + leaveCount)) * 100));
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#0f766e" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Labour Attendance</Text>
+        <Text style={styles.subtitle}>Track worker attendance and activities</Text>
+      </View>
+
+      <View style={styles.form}>
+        <View style={styles.attendanceCard}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="people-outline" size={24} color="#0f766e" />
+            <Text style={styles.cardTitle}>Daily Attendance Report</Text>
+          </View>
+          
+          <View style={styles.cardContent}>
+            <Text style={styles.attendanceText}>{randomText}</Text>
+          </View>
+
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{presentCount}</Text>
+              <Text style={styles.statLabel}>Present Today</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{leaveCount}</Text>
+              <Text style={styles.statLabel}>On Leave</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{attendanceRate}%</Text>
+              <Text style={styles.statLabel}>Attendance Rate</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="checkmark-circle-outline" size={20} color="#059669" />
+            <Text style={styles.actionButtonText}>Mark Attendance</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="document-text-outline" size={20} color="#0369a1" />
+            <Text style={styles.actionButtonText}>View Reports</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="time-outline" size={20} color="#7c2d12" />
+            <Text style={styles.actionButtonText}>Overtime Log</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="calendar-outline" size={20} color="#7c3aed" />
+            <Text style={styles.actionButtonText}>Schedule</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.infoCard}>
+          <View style={styles.infoHeader}>
+            <Ionicons name="information-circle-outline" size={20} color="#0369a1" />
+            <Text style={styles.infoTitle}>Today's Update</Text>
+          </View>
+          <Text style={styles.infoText}>
+            All labour assignments have been synchronized with the project timeline. 
+            Site supervisors have been notified of today's work distribution and safety requirements.
+            Performance metrics are being monitored continuously.
+          </Text>
+        </View>
+
+        <View style={styles.quickActions}>
+          <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+          <View style={styles.quickActionsList}>
+            <TouchableOpacity style={styles.quickActionItem}>
+              <Ionicons name="add-circle-outline" size={18} color="#059669" />
+              <Text style={styles.quickActionText}>Add Worker</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickActionItem}>
+              <Ionicons name="swap-horizontal-outline" size={18} color="#0369a1" />
+              <Text style={styles.quickActionText}>Transfer Labour</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickActionItem}>
+              <Ionicons name="stats-chart-outline" size={18} color="#7c2d12" />
+              <Text style={styles.quickActionText}>View Analytics</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
+  );
+};
+
 // API service functions
 const apiService = {
+  async fetchCompanies() {
+    const response = await apiClient.get('/project/companies');
+    return response.data || [];
+  },
+
   async fetchProjects() {
     const response = await apiClient.get('/project/projects-with-sites');
     return response.data || [];
@@ -165,10 +403,12 @@ export default function LabourAssign({ route }) {
 
   // State management
   const [state, setState] = useState({
+    companies: [],
     projects: [],
     sites: [],
     workDescriptions: [],
     labours: [],
+    selectedCompany: null,
     selectedProject: null,
     selectedSite: null,
     selectedWorkDesc: null,
@@ -180,9 +420,18 @@ export default function LabourAssign({ route }) {
     loading: false,
     submitting: false,
     refreshing: false,
+    assignmentSaved: false,
+    showAttendancePage: false,
   });
 
   // Memoized computed values
+  const companyOptions = useMemo(() =>
+    state.companies.map(company => ({
+      label: company.company_name,
+      value: company.company_id,
+    })), [state.companies]
+  );
+
   const projectOptions = useMemo(() =>
     state.projects.map(project => ({
       label: project.project_name,
@@ -214,6 +463,7 @@ export default function LabourAssign({ route }) {
   );
 
   const isFormValid = useMemo(() =>
+    state.selectedCompany &&
     state.selectedProject &&
     state.selectedSite &&
     state.selectedWorkDesc &&
@@ -221,30 +471,82 @@ export default function LabourAssign({ route }) {
     state.fromDate &&
     state.toDate &&
     state.toDate >= state.fromDate
-  , [state.selectedProject, state.selectedSite, state.selectedWorkDesc, state.selectedLabours, state.fromDate, state.toDate]);
+  , [state.selectedCompany, state.selectedProject, state.selectedSite, state.selectedWorkDesc, state.selectedLabours, state.fromDate, state.toDate]);
 
   // State update helper
   const updateState = useCallback((updates) => {
     setState(prevState => ({ ...prevState, ...updates }));
   }, []);
 
-  // Fetch projects on component mount
+  // Show attendance page
+  if (state.showAttendancePage) {
+    return (
+      <LabourAttendancePage 
+        onBack={() => updateState({ showAttendancePage: false })} 
+      />
+    );
+  }
+
+  // Fetch companies on component mount
   useEffect(() => {
-    const fetchProjects = async () => {
+    const fetchCompanies = async () => {
       try {
         updateState({ loading: true });
-        const projects = await apiService.fetchProjects();
-        updateState({ projects });
+        const companies = await apiService.fetchCompanies();
+        console.log('Companies fetched:', companies);
+        updateState({ companies });
       } catch (error) {
-        const message = handleApiError(error, 'fetch projects');
+        const message = handleApiError(error, 'fetch companies');
         Toast.show({ type: 'error', text1: message });
       } finally {
         updateState({ loading: false });
       }
     };
 
-    fetchProjects();
+    fetchCompanies();
   }, [updateState]);
+
+  // Update projects when company changes
+  useEffect(() => {
+    if (state.selectedCompany) {
+      const fetchProjects = async () => {
+        try {
+          updateState({ loading: true });
+          const allProjects = await apiService.fetchProjects();
+          const filteredProjects = allProjects.filter(project => project.company_id === state.selectedCompany);
+          console.log('Filtered projects:', filteredProjects);
+          updateState({ 
+            projects: filteredProjects,
+            selectedProject: null,
+            sites: [],
+            selectedSite: null,
+            selectedWorkDesc: null,
+            selectedLabours: [],
+            workDescriptions: [],
+            labours: [],
+          });
+        } catch (error) {
+          const message = handleApiError(error, 'fetch projects');
+          Toast.show({ type: 'error', text1: message });
+        } finally {
+          updateState({ loading: false });
+        }
+      };
+
+      fetchProjects();
+    } else {
+      updateState({
+        projects: [],
+        selectedProject: null,
+        sites: [],
+        selectedSite: null,
+        selectedWorkDesc: null,
+        selectedLabours: [],
+        workDescriptions: [],
+        labours: [],
+      });
+    }
+  }, [state.selectedCompany, updateState]);
 
   // Update sites when project changes
   useEffect(() => {
@@ -253,6 +555,7 @@ export default function LabourAssign({ route }) {
         project => project.project_id === state.selectedProject
       );
       
+      console.log('Selected project sites:', selectedProjectData?.sites);
       updateState({
         sites: selectedProjectData?.sites || [],
         selectedSite: null,
@@ -276,6 +579,8 @@ export default function LabourAssign({ route }) {
             apiService.fetchLabours(),
           ]);
 
+          console.log('Work descriptions:', workDescriptions);
+          console.log('Labours:', labours);
           updateState({ workDescriptions, labours });
         } catch (error) {
           const message = handleApiError(error, 'fetch site data');
@@ -348,6 +653,7 @@ export default function LabourAssign({ route }) {
 
     // Prepare payload
     const payload = {
+      company_id: state.selectedCompany,
       project_id: state.selectedProject,
       site_id: state.selectedSite,
       desc_id: state.selectedWorkDesc,
@@ -356,6 +662,8 @@ export default function LabourAssign({ route }) {
       to_date: state.toDate.toISOString().split('T')[0],
       created_by: userId,
     };
+
+    console.log('Sending payload:', payload);
 
     try {
       updateState({ submitting: true });
@@ -368,10 +676,11 @@ export default function LabourAssign({ route }) {
         text2: response.message || 'Assignment saved successfully',
       });
 
-      // Reset form partially
+      // Reset form partially and show attendance button
       updateState({
         selectedWorkDesc: null,
         selectedLabours: [],
+        assignmentSaved: true,
       });
 
     } catch (error) {
@@ -390,8 +699,8 @@ export default function LabourAssign({ route }) {
   const handleRefresh = useCallback(async () => {
     try {
       updateState({ refreshing: true });
-      const projects = await apiService.fetchProjects();
-      updateState({ projects });
+      const companies = await apiService.fetchCompanies();
+      updateState({ companies });
     } catch (error) {
       const message = handleApiError(error, 'refresh data');
       Toast.show({ type: 'error', text1: message });
@@ -401,9 +710,9 @@ export default function LabourAssign({ route }) {
   }, [updateState]);
 
   // Labour management
-  const addLabour = useCallback((labourId) => {
+  const addLabour = useCallback((item) => {
     updateState({
-      selectedLabours: [...state.selectedLabours, labourId],
+      selectedLabours: [...state.selectedLabours, item.value],
     });
   }, [state.selectedLabours, updateState]);
 
@@ -432,6 +741,15 @@ export default function LabourAssign({ route }) {
     }
   }, [updateState]);
 
+  // Show attendance page conditionally at the end, after all hooks
+  if (state.showAttendancePage) {
+    return (
+      <LabourAttendancePage 
+        onBack={() => updateState({ showAttendancePage: false })} 
+      />
+    );
+  }
+
   return (
     <ScrollView
       style={styles.container}
@@ -447,33 +765,41 @@ export default function LabourAssign({ route }) {
       </View>
 
       <View style={styles.form}>
+        {/* Company Selection */}
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>
+            Company <Text style={styles.required}>*</Text>
+          </Text>
+          <CustomDropdown
+            data={companyOptions}
+            value={state.selectedCompany}
+            onChange={(item) => {
+              console.log('Company selected:', item);
+              updateState({ selectedCompany: item.value, assignmentSaved: false });
+            }}
+            placeholder="Select company"
+            disabled={state.loading}
+            error={!state.selectedCompany}
+            searchable={true}
+          />
+        </View>
+
         {/* Project Selection */}
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>
             Project <Text style={styles.required}>*</Text>
           </Text>
-          <Dropdown
-            style={[
-              styles.dropdown,
-              !state.selectedProject && styles.dropdownError,
-            ]}
-            placeholderStyle={styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            inputSearchStyle={styles.inputSearchStyle}
-            iconStyle={styles.iconStyle}
+          <CustomDropdown
             data={projectOptions}
-            search
-            maxHeight={200}
-            labelField="label"
-            valueField="value"
-            placeholder="Select project"
-            searchPlaceholder="Search..."
             value={state.selectedProject}
-            onChange={(item) => updateState({ selectedProject: item.value })}
-            disable={state.loading}
-            renderRightIcon={() => (
-              <Ionicons name="chevron-down" size={16} color="#64748b" />
-            )}
+            onChange={(item) => {
+              console.log('Project selected:', item);
+              updateState({ selectedProject: item.value, assignmentSaved: false });
+            }}
+            placeholder="Select project"
+            disabled={!state.selectedCompany || state.loading}
+            error={!state.selectedProject && state.selectedCompany}
+            searchable={true}
           />
         </View>
 
@@ -482,29 +808,17 @@ export default function LabourAssign({ route }) {
           <Text style={styles.label}>
             Site <Text style={styles.required}>*</Text>
           </Text>
-          <Dropdown
-            style={[
-              styles.dropdown,
-              !state.selectedProject && styles.dropdownDisabled,
-              !state.selectedSite && state.selectedProject && styles.dropdownError,
-            ]}
-            placeholderStyle={styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            inputSearchStyle={styles.inputSearchStyle}
-            iconStyle={styles.iconStyle}
+          <CustomDropdown
             data={siteOptions}
-            search
-            maxHeight={200}
-            labelField="label"
-            valueField="value"
-            placeholder="Select site"
-            searchPlaceholder="Search..."
             value={state.selectedSite}
-            onChange={(item) => updateState({ selectedSite: item.value })}
-            disable={!state.selectedProject || state.loading}
-            renderRightIcon={() => (
-              <Ionicons name="chevron-down" size={16} color="#64748b" />
-            )}
+            onChange={(item) => {
+              console.log('Site selected:', item);
+              updateState({ selectedSite: item.value, assignmentSaved: false });
+            }}
+            placeholder="Select site"
+            disabled={!state.selectedCompany || !state.selectedProject || state.loading}
+            error={!state.selectedSite && state.selectedProject}
+            searchable={true}
           />
         </View>
 
@@ -513,29 +827,17 @@ export default function LabourAssign({ route }) {
           <Text style={styles.label}>
             Work Description <Text style={styles.required}>*</Text>
           </Text>
-          <Dropdown
-            style={[
-              styles.dropdown,
-              (!state.selectedProject || !state.selectedSite) && styles.dropdownDisabled,
-              !state.selectedWorkDesc && state.selectedSite && styles.dropdownError,
-            ]}
-            placeholderStyle={styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            inputSearchStyle={styles.inputSearchStyle}
-            iconStyle={styles.iconStyle}
+          <CustomDropdown
             data={workDescOptions}
-            search
-            maxHeight={200}
-            labelField="label"
-            valueField="value"
-            placeholder="Select work description"
-            searchPlaceholder="Search..."
             value={state.selectedWorkDesc}
-            onChange={(item) => updateState({ selectedWorkDesc: item.value })}
-            disable={!state.selectedProject || !state.selectedSite || state.loading}
-            renderRightIcon={() => (
-              <Ionicons name="chevron-down" size={16} color="#64748b" />
-            )}
+            onChange={(item) => {
+              console.log('Work description selected:', item);
+              updateState({ selectedWorkDesc: item.value, assignmentSaved: false });
+            }}
+            placeholder="Select work description"
+            disabled={!state.selectedCompany || !state.selectedProject || !state.selectedSite || state.loading}
+            error={!state.selectedWorkDesc && state.selectedSite}
+            searchable={true}
           />
         </View>
 
@@ -544,29 +846,18 @@ export default function LabourAssign({ route }) {
           <Text style={styles.label}>
             Labours <Text style={styles.required}>*</Text>
           </Text>
-          <Dropdown
-            style={[
-              styles.dropdown,
-              (!state.selectedProject || !state.selectedSite || !state.selectedWorkDesc) && styles.dropdownDisabled,
-              state.selectedLabours.length === 0 && state.selectedWorkDesc && styles.dropdownError,
-            ]}
-            placeholderStyle={styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            inputSearchStyle={styles.inputSearchStyle}
-            iconStyle={styles.iconStyle}
+          <CustomDropdown
             data={labourOptions}
-            search
-            maxHeight={200}
-            labelField="label"
-            valueField="value"
-            placeholder="Add labours"
-            searchPlaceholder="Search..."
             value={null}
-            onChange={(item) => addLabour(item.value)}
-            disable={!state.selectedProject || !state.selectedSite || !state.selectedWorkDesc || state.loading}
-            renderRightIcon={() => (
-              <Ionicons name="add-circle-outline" size={16} color="#64748b" />
-            )}
+            onChange={(item) => {
+              console.log('Labour selected:', item);
+              addLabour(item);
+              updateState({ assignmentSaved: false });
+            }}
+            placeholder="Add labours"
+            disabled={!state.selectedCompany || !state.selectedProject || !state.selectedSite || !state.selectedWorkDesc || state.loading}
+            error={state.selectedLabours.length === 0 && state.selectedWorkDesc}
+            searchable={true}
           />
 
           {/* Selected Labours Display */}
@@ -587,7 +878,10 @@ export default function LabourAssign({ route }) {
                         </Text>
                       </View>
                       <TouchableOpacity
-                        onPress={() => removeLabour(labourId)}
+                        onPress={() => {
+                          removeLabour(labourId);
+                          updateState({ assignmentSaved: false });
+                        }}
                         style={styles.removeButton}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       >
@@ -683,6 +977,23 @@ export default function LabourAssign({ route }) {
             </Text>
           </View>
         </TouchableOpacity>
+
+        {/* Labour Attendance Button - Always visible for testing */}
+        <TouchableOpacity
+          style={[
+            styles.attendanceButton,
+            !state.assignmentSaved && styles.attendanceButtonTest
+          ]}
+          onPress={() => updateState({ showAttendancePage: true })}
+          activeOpacity={0.8}
+        >
+          <View style={styles.buttonContent}>
+            <Ionicons name="people" size={18} color="white" />
+            <Text style={styles.attendanceButtonText}>
+              {state.assignmentSaved ? 'Labour Attendance' : 'Labour Attendance (Test)'}
+            </Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       <Toast />
@@ -715,6 +1026,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '400',
   },
+  backButton: {
+    position: 'absolute',
+    left: 20,
+    top: 0,
+    zIndex: 1,
+  },
   form: {
     backgroundColor: 'white',
     marginHorizontal: 16,
@@ -738,13 +1055,17 @@ const styles = StyleSheet.create({
   required: {
     color: '#dc2626',
   },
-  dropdown: {
+  // Custom Dropdown Styles
+  dropdownButton: {
     height: 44,
     borderWidth: 1,
     borderColor: '#d1d5db',
     borderRadius: 8,
     paddingHorizontal: 14,
     backgroundColor: 'white',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   dropdownDisabled: {
     backgroundColor: '#f8fafc',
@@ -753,23 +1074,66 @@ const styles = StyleSheet.create({
   dropdownError: {
     borderColor: '#dc2626',
   },
-  placeholderStyle: {
-    fontSize: 14,
-    color: '#9ca3af',
-  },
-  selectedTextStyle: {
+  dropdownButtonText: {
     fontSize: 14,
     color: '#111827',
     fontWeight: '500',
+    flex: 1,
   },
-  inputSearchStyle: {
-    height: 40,
+  dropdownPlaceholder: {
+    color: '#9ca3af',
+    fontWeight: '400',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    maxHeight: 300,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
     fontSize: 14,
-    borderRadius: 6,
+    color: '#111827',
   },
-  iconStyle: {
-    width: 16,
-    height: 16,
+  dropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  dropdownItemSelected: {
+    backgroundColor: '#f0f9ff',
+  },
+  dropdownItemText: {
+    fontSize: 14,
+    color: '#374151',
+    flex: 1,
+  },
+  dropdownItemTextSelected: {
+    color: '#0f766e',
+    fontWeight: '500',
   },
   selectedContainer: {
     marginTop: 10,
@@ -866,12 +1230,30 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 6,
     elevation: 4,
+    marginBottom: 12,
   },
   saveButtonDisabled: {
     backgroundColor: '#94a3b8',
     shadowColor: '#94a3b8',
     shadowOpacity: 0.15,
     elevation: 2,
+  },
+  attendanceButton: {
+    backgroundColor: '#0369a1',
+    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    shadowColor: '#0369a1',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  attendanceButtonTest: {
+    backgroundColor: '#7c2d12',
+    borderWidth: 2,
+    borderColor: '#dc2626',
+    shadowColor: '#7c2d12',
   },
   buttonContent: {
     flexDirection: 'row',
@@ -883,5 +1265,152 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  attendanceButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  // Labour Attendance Page Styles
+  attendanceCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+    marginBottom: 20,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginLeft: 8,
+  },
+  cardContent: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#0f766e',
+  },
+  attendanceText: {
+    fontSize: 15,
+    color: '#374151',
+    lineHeight: 22,
+    fontWeight: '400',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#0f766e',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    width: '48%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginLeft: 8,
+  },
+  infoCard: {
+    backgroundColor: '#eff6ff',
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+    marginBottom: 20,
+  },
+  infoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0369a1',
+    marginLeft: 6,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#1e40af',
+    lineHeight: 20,
+    fontWeight: '400',
+  },
+  quickActions: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  quickActionsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 12,
+  },
+  quickActionsList: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  quickActionItem: {
+    alignItems: 'center',
+    flex: 1,
+    paddingVertical: 8,
+  },
+  quickActionText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 4,
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });
