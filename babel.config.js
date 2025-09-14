@@ -5,11 +5,13 @@ module.exports = function (api) {
       "babel-preset-expo",
       "nativewind/babel",
     ],
+    plugins: [
+      "react-native-worklets/plugin", // Updated from react-native-reanimated/plugin
+    ],
     env: {
-    production: {
-      plugins: ['react-native-paper/babel'],
+      production: {
+        plugins: ['react-native-paper/babel'],
+      },
     },
-  },
-    
   };
 };
