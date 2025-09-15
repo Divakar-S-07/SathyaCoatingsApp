@@ -100,7 +100,8 @@ const MaterialCard = ({ itemId, onView, onUpdate, image, itemName, onUsage }) =>
             justifyContent: "center",
           }}
           className="border border-[#1e7a6f] "
-          onPress={onUsage}
+          onPress={() => onUsage(itemId)}
+
         >
           <Ionicons
             name="create-outline"

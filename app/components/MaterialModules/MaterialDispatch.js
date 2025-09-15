@@ -46,6 +46,14 @@ const Material = () => {
   const [usageModalVisible, setUsageModalVisible] = useState(false);
   const [usages, setUsages] = useState({});
 
+  // dropdown visible
+  const [dropdownsCollapsed, setDropdownsCollapsed] = useState(false);
+
+  const [usageInputs, setUsageInputs] = useState({});
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [usageDetails, setUsageDetails] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+
 
 
 
@@ -92,6 +100,21 @@ const Material = () => {
       setLoading(false);
     }
   };
+
+  // fetch usage details 
+  const fetchUsageDetails = async (ackId) => {
+  try {
+    const response = await axios.get(
+      `http://103.118.158.127/api/site-incharge/material-usage-details?material_ack_id=${ackId}&date=${selectedDate}`
+    );
+    setUsageDetails(prev => ({
+      ...prev,
+      [ackId]: response.data.data
+    }));
+  } catch (err) {
+    console.log("Failed to fetch usage details");
+  }
+};
 
   useEffect(() => {
     fetchCompanies();
@@ -233,6 +256,9 @@ const Material = () => {
     }));
   };
 
+  
+
+
   const openAcknowledgementModal = (item) => {
     setSelectedItem(item);
     // Initialize with existing acknowledgement data or empty strings
@@ -248,9 +274,59 @@ const Material = () => {
   };
 
   const openUsageModal = (item) => {
+    console.log("Opening usage modal for:", item.item_name);
   setSelectedItem(item);
+
+   // Initialize usage state for this item if not exists
+  setUsages((prev) => ({
+    ...prev,
+    [item.id]: prev[item.id] || { used_quantity: "", remarks: "" },
+  }));
   setUsageModalVisible(true);
 };
+
+  const handleInputChange = (compositeKey, field, value) => {
+  setUsageInputs(prev => ({
+    ...prev,
+    [compositeKey]: {
+      ...prev[compositeKey],
+      [field]: value
+    }
+  }));
+};
+
+  const handleSaveUsage = async (ackId) => {
+  const usageData = usageInputs[ackId];
+  if (!usageData || !usageData.overall_qty) {
+    Alert.alert("Error", "Please enter usage quantity");
+    return;
+  }
+
+  try {
+    setSubmitting(true);
+    
+    // Use the correct API endpoint from your web version
+    const response = await axios.post("http://103.118.158.127/api/site-incharge/save-material-usage", {
+      material_ack_id: parseInt(ackId),
+      entry_date: selectedDate,
+      overall_qty: parseInt(usageData.overall_qty),
+      remarks: usageData.remarks || null,
+      created_by: 1 // You'll need to get this from user context or params
+    });
+
+    Alert.alert("Success", response.data.message);
+    
+    // Clear the usage input
+    setUsageInputs(prev => ({ ...prev, [ackId]: {} }));
+    setUsageModalVisible(false);
+    
+  } catch (err) {
+    Alert.alert("Error", err.response?.data?.message || "Failed to save material usage");
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
 
   const formatItemAndRatios = (dispatch) => {
@@ -277,19 +353,19 @@ const Material = () => {
             : "bg-white border-gray-400 shadow-md"
         }`}
         style={{
-                height: 35,
+                height: 40,
                 borderWidth: 1,
                 borderColor: "#ccc",
                 borderRadius: 6,
                 backgroundColor: "#fff",
-                paddingHorizontal: 10,
+                paddingHorizontal: 14,
                 marginBottom: 5,
                 // width: "100%"
               }}
       >
         <View className="flex-row items-center justify-between ">
           <Text
-            className={`text-base text-md ${
+            className={` text-sm ${
               !value ? "text-gray-400" : disabled ? "text-gray-500" : "text-black"
             }`}
           >
@@ -352,7 +428,7 @@ const Material = () => {
 
 
   const DropdownModal = ({ visible, onClose, data, onSelect, title, keyProp }) => (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent >
       <View className="flex-1 bg-black/60">
         <TouchableOpacity
           className="items-center justify-center flex-1 p-4"
@@ -402,20 +478,12 @@ const Material = () => {
 
   return (
     <View className="flex-1 p-3 bg-gray-100">
+      
       {/* Header with Company, Project, Site, Work Description Selection */}
-      <View className="bg-[#fff] px-4 py-2 rounded-xl mb-4">
+      {/* <View className="bg-[#fff] px-4 py-2 rounded-xl mb-4">
         <View className="">
 
-          {/* {dispatchData.length > 0 && (
-          <TouchableOpacity
-            onPress={() => setSummaryModalVisible(true)}
-            className="px-4 py-3 mb-3 bg-[#1e7a6f] rounded-lg"
-          >
-            <Text className="text-base font-semibold text-center text-white">
-               Acknowledgement status
-            </Text>
-          </TouchableOpacity>
-        )} */}
+          
           
           <DropdownButton
             label="Company"
@@ -448,7 +516,75 @@ const Material = () => {
           
 
         </View>
-      </View>
+      </View> */}
+
+      {!dropdownsCollapsed ? (
+  <View className="px-4 py-2 mb-4 bg-white rounded-xl">
+    <DropdownButton
+      label="Company"
+      value={selectedCompany}
+      onPress={() => setCompanyModalVisible(true)}
+      disabled={false}
+    />
+
+    <DropdownButton
+      label="Project"
+      value={selectedProject}
+      onPress={() => setProjectModalVisible(true)}
+      disabled={!selectedCompany}
+    />
+
+    <DropdownButton
+      label="Site"
+      value={selectedSite}
+      onPress={() => setSiteModalVisible(true)}
+      disabled={!selectedProject}
+    />
+
+    <DropdownButton
+      label="Work Description"
+      value={selectedWorkDescription}
+      onPress={() => setWorkDescModalVisible(true)}
+      disabled={!selectedSite}
+    />
+  </View>
+      )
+
+   : (
+<>
+    {dispatchData.length > 0 && (
+          <TouchableOpacity
+            onPress={() => setSummaryModalVisible(true)}
+            className="px-4 py-3 mb-3 bg-[#1e7a6f] rounded-lg"
+          >
+            <Text className="text-base font-semibold text-center text-white">
+               Acknowledgement status
+            </Text>
+          </TouchableOpacity>
+        )}
+
+    <TouchableOpacity
+    onPress={() => setDropdownsCollapsed(false)}
+    style={{
+      position: "absolute",
+      bottom: 20,
+      right: 20,
+      backgroundColor: "#1e7a6f",
+      padding: 14,
+      borderRadius: 50,
+      elevation: 5,
+      zIndex: 999
+    }}
+  >
+    <Ionicons name="list-circle" size={30} color="#fff" />
+  </TouchableOpacity>
+  </>
+   )
+}
+
+
+
+
 
       {/* Dropdown Modals */}
       <DropdownModal
@@ -499,214 +635,357 @@ const Material = () => {
         onSelect={(item) => {
         setSelectedWorkDescription(item);
         setWorkDescModalVisible(false);
-        // 👈 Here you can trigger fetch or just close
+        setDropdownsCollapsed(true);
       }}
       />
 
       {/* Acknowledgement Modal */}
-<Modal visible={acknowledgementModal} transparent animationType="fade">
-  <View className="items-center justify-center flex-1 p-5 bg-black/50">
-    <View className="w-full max-h-[80%] p-5 bg-white rounded-2xl">
-      {selectedItem && (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="p-3 mb-4 rounded-lg bg-gray-50">
-            <Text className="mb-2 text-base font-semibold text-gray-800">
-              {formatItemAndRatios(selectedItem)}
-            </Text>
+      <Modal visible={acknowledgementModal} transparent animationType="fade">
+        <View className="items-center justify-center flex-1 p-5 bg-black/50">
+          <View className="w-full max-h-[80%] p-5 bg-white rounded-2xl">
+            {selectedItem && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View className="p-3 mb-4 rounded-lg bg-gray-50">
+                  <Text className="mb-2 text-base font-semibold text-gray-800">
+                    {formatItemAndRatios(selectedItem)}
+                  </Text>
 
-            {/* Dispatched Quantities */}
-            <Text className="mb-2 text-sm font-medium text-gray-700">
-              Dispatched Quantities:
-            </Text>
-            <View className="space-y-1">
-              {selectedItem.comp_a_qty !== null && (
-                <Text className="text-sm text-gray-600">
-                  <Text className="font-medium">Comp A:</Text> {selectedItem.comp_a_qty}
+                  {/* Dispatched Quantities */}
+                  <Text className="mb-2 text-sm font-medium text-gray-700">
+                    Dispatched Quantities:
+                  </Text>
+                  <View className="space-y-1">
+                    {selectedItem.comp_a_qty !== null && (
+                      <Text className="text-sm text-gray-600">
+                        <Text className="font-medium">Comp A:</Text> {selectedItem.comp_a_qty}
+                      </Text>
+                    )}
+                    {selectedItem.comp_b_qty !== null && (
+                      <Text className="text-sm text-gray-600">
+                        <Text className="font-medium">Comp B:</Text> {selectedItem.comp_b_qty}
+                      </Text>
+                    )}
+                    {selectedItem.comp_c_qty !== null && (
+                      <Text className="text-sm text-gray-600">
+                        <Text className="font-medium">Comp C:</Text> {selectedItem.comp_c_qty}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+
+                {/* <Modal visible={usageModalVisible} transparent animationType="fade">
+        <View className="items-center justify-center flex-1 p-5 bg-black/50">
+          <View className="w-full max-h-[80%] p-5 bg-white rounded-2xl">
+            {selectedItem && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text className="mb-3 text-lg font-bold text-gray-800">
+                  Usage for {selectedItem.item_name}
                 </Text>
-              )}
-              {selectedItem.comp_b_qty !== null && (
-                <Text className="text-sm text-gray-600">
-                  <Text className="font-medium">Comp B:</Text> {selectedItem.comp_b_qty}
-                </Text>
-              )}
-              {selectedItem.comp_c_qty !== null && (
-                <Text className="text-sm text-gray-600">
-                  <Text className="font-medium">Comp C:</Text> {selectedItem.comp_c_qty}
-                </Text>
-              )}
-            </View>
-          </View>
 
-          <Modal visible={usageModalVisible} transparent animationType="fade">
-  <View className="items-center justify-center flex-1 p-5 bg-black/50">
-    <View className="w-full max-h-[80%] p-5 bg-white rounded-2xl">
-      {selectedItem && (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <Text className="mb-3 text-lg font-bold text-gray-800">
-            Usage for {selectedItem.item_name}
-          </Text>
-
-          <Text className="mb-1 text-sm font-medium text-gray-600">
-            Used Quantity
-          </Text>
-          <TextInput
-            keyboardType="numeric"
-            placeholder="Enter used quantity"
-            value={usages[selectedItem.id]?.used_quantity || ""}
-            onChangeText={(value) =>
-              setUsages((prev) => ({
-                ...prev,
-                [selectedItem.id]: {
-                  ...prev[selectedItem.id],
-                  used_quantity: value,
-                },
-              }))
-            }
-            className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
-          />
-
-          <Text className="mb-1 text-sm font-medium text-gray-600">
-            Remarks
-          </Text>
-          <TextInput
-            placeholder="Enter remarks"
-            value={usages[selectedItem.id]?.remarks || ""}
-            onChangeText={(value) =>
-              setUsages((prev) => ({
-                ...prev,
-                [selectedItem.id]: {
-                  ...prev[selectedItem.id],
-                  remarks: value,
-                },
-              }))
-            }
-            className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
-
-          <TouchableOpacity
-            onPress={async () => {
-              try {
-                await axios.post(
-                  "http://103.118.158.127/api/site-incharge/usage-material",
-                  {
-                    material_dispatch_id: selectedItem.id,
-                    used_quantity: parseInt(
-                      usages[selectedItem.id]?.used_quantity || "0"
-                    ),
-                    remarks: usages[selectedItem.id]?.remarks || null,
-                  }
-                );
-                Alert.alert("Success", "Usage saved successfully");
-                setUsageModalVisible(false);
-              } catch (err) {
-                Alert.alert("Error", "Failed to save usage");
-              }
-            }}
-            className="px-4 py-3 mt-2 bg-indigo-600 rounded-lg"
-          >
-            <Text className="font-semibold text-center text-white">
-              Save Usage
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
-      )}
-
-      <TouchableOpacity
-        onPress={() => setUsageModalVisible(false)}
-        className="py-3 mt-4 bg-gray-400 rounded-lg"
-      >
-        <Text className="font-semibold text-center text-white">Close</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
-
-
-          {/* Show existing acknowledgement OR input form */}
-          {ackDetails[selectedItem.id] && ackDetails[selectedItem.id].acknowledgement ? (
-            <View className="p-3 rounded-lg bg-green-50">
-              <Text className="mb-1 text-base font-semibold text-green-800">
-                Acknowledgement Details
-              </Text>
-              <Text className="text-sm text-gray-700">
-                Overall Quantity: {ackDetails[selectedItem.id].acknowledgement.overall_quantity} (
-                {ackDetails[selectedItem.id].acknowledgement.overall_quantity} litre received)
-              </Text>
-              <Text className="mt-1 text-sm text-gray-700">
-                Remarks: {ackDetails[selectedItem.id].acknowledgement.remarks || "None"}
-              </Text>
-            </View>
-          ) : (
-            <View className="space-y-3">
-              <View>
                 <Text className="mb-1 text-sm font-medium text-gray-600">
-                  Overall Quantity Received
+                  Used Quantity
                 </Text>
                 <TextInput
                   keyboardType="numeric"
-                  placeholder="Enter overall quantity received"
-                  value={acknowledgements[selectedItem.id]?.overall_quantity || ""}
+                  placeholder="Enter used quantity"
+                  value={usages[selectedItem.id]?.used_quantity || ""}
                   onChangeText={(value) =>
-                    handleAckInputChange(selectedItem.id, "overall_quantity", value)
+                    setUsages((prev) => ({
+                      ...prev,
+                      [selectedItem.id]: {
+                        ...prev[selectedItem.id],
+                        used_quantity: value,
+                      },
+                    }))
                   }
-                  className="p-3 bg-white border border-gray-400 rounded-lg"
-                  maxLength={10}
+                  className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
                 />
-              </View>
 
-              <View>
                 <Text className="mb-1 text-sm font-medium text-gray-600">
-                  Remarks 
+                  Remarks
                 </Text>
                 <TextInput
-                  placeholder="Add any remarks about the received material"
-                  value={acknowledgements[selectedItem.id]?.remarks || ""}
+                  placeholder="Enter remarks"
+                  value={usages[selectedItem.id]?.remarks || ""}
                   onChangeText={(value) =>
-                    handleAckInputChange(selectedItem.id, "remarks", value)
+                    setUsages((prev) => ({
+                      ...prev,
+                      [selectedItem.id]: {
+                        ...prev[selectedItem.id],
+                        remarks: value,
+                      },
+                    }))
                   }
-                  className="p-3 bg-white border border-gray-400 rounded-lg"
+                  className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
                   multiline
                   numberOfLines={3}
                   textAlignVertical="top"
                 />
-              </View>
 
-              <TouchableOpacity
-                onPress={() => handleAcknowledge(selectedItem.id)}
-                disabled={
-                  !acknowledgements[selectedItem.id] ||
-                  (!acknowledgements[selectedItem.id].overall_quantity &&
-                    !acknowledgements[selectedItem.id].remarks)
-                }
-                className={`px-4 py-3 rounded-lg mt-2 ${
-                  !acknowledgements[selectedItem.id] ||
-                  (!acknowledgements[selectedItem.id].overall_quantity &&
-                    !acknowledgements[selectedItem.id].remarks)
-                    ? "bg-gray-300"
-                    : "bg-indigo-600"
-                }`}
-              >
-                <Text className="font-semibold text-center text-white">
-                  Save Acknowledgement
+                <TouchableOpacity
+                  onPress={async () => {
+                    try {
+                      await axios.post(
+                        "http://103.118.158.127/api/site-incharge/usage-material",
+                        {
+                          material_dispatch_id: selectedItem.id,
+                          used_quantity: parseInt(
+                            usages[selectedItem.id]?.used_quantity || "0"
+                          ),
+                          remarks: usages[selectedItem.id]?.remarks || null,
+                        }
+                      );
+                      Alert.alert("Success", "Usage saved successfully");
+                      setUsageModalVisible(false);
+                    } catch (err) {
+                      Alert.alert("Error", "Failed to save usage");
+                    }
+                  }}
+                  className="px-4 py-3 mt-2 bg-indigo-600 rounded-lg"
+                >
+                  <Text className="font-semibold text-center text-white">
+                    Save Usage
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+
+            <TouchableOpacity
+              onPress={() => setUsageModalVisible(false)}
+              className="py-3 mt-4 bg-gray-400 rounded-lg"
+            >
+              <Text className="font-semibold text-center text-white">Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal> */}
+
+
+                {/* Show existing acknowledgement OR input form */}
+                {ackDetails[selectedItem.id] && ackDetails[selectedItem.id].acknowledgement ? (
+                  <View className="p-3 rounded-lg bg-green-50">
+                    <Text className="mb-1 text-base font-semibold text-green-800">
+                      Acknowledgement Details
+                    </Text>
+                    <Text className="text-sm text-gray-700">
+                      Overall Quantity: {ackDetails[selectedItem.id].acknowledgement.overall_quantity} (
+                      {ackDetails[selectedItem.id].acknowledgement.overall_quantity} litre received)
+                    </Text>
+                    <Text className="mt-1 text-sm text-gray-700">
+                      Remarks: {ackDetails[selectedItem.id].acknowledgement.remarks || "None"}
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="space-y-3">
+                    <View>
+                      <Text className="mb-1 text-sm font-medium text-gray-600">
+                        Overall Quantity Received
+                      </Text>
+                      <TextInput
+                        keyboardType="numeric"
+                        placeholder="Enter overall quantity received"
+                        value={acknowledgements[selectedItem.id]?.overall_quantity || ""}
+                        onChangeText={(value) =>
+                          handleAckInputChange(selectedItem.id, "overall_quantity", value)
+                        }
+                        className="p-3 bg-white border border-gray-400 rounded-lg"
+                        maxLength={10}
+                      />
+                    </View>
+
+                    <View>
+                      <Text className="mb-1 text-sm font-medium text-gray-600">
+                        Remarks 
+                      </Text>
+                      <TextInput
+                        placeholder="Add any remarks about the received material"
+                        value={acknowledgements[selectedItem.id]?.remarks || ""}
+                        onChangeText={(value) =>
+                          handleAckInputChange(selectedItem.id, "remarks", value)
+                        }
+                        className="p-3 bg-white border border-gray-400 rounded-lg"
+                        multiline
+                        numberOfLines={3}
+                        textAlignVertical="top"
+                      />
+                    </View>
+
+                    <TouchableOpacity
+                      onPress={() => handleAcknowledge(selectedItem.id)}
+                      disabled={
+                        !acknowledgements[selectedItem.id] ||
+                        (!acknowledgements[selectedItem.id].overall_quantity &&
+                          !acknowledgements[selectedItem.id].remarks)
+                      }
+                      className={`px-4 py-3 rounded-lg mt-2 ${
+                        !acknowledgements[selectedItem.id] ||
+                        (!acknowledgements[selectedItem.id].overall_quantity &&
+                          !acknowledgements[selectedItem.id].remarks)
+                          ? "bg-gray-300"
+                          : "bg-indigo-600"
+                      }`}
+                    >
+                      <Text className="font-semibold text-center text-white">
+                        Save Acknowledgement
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </ScrollView>
+            )}
+
+            <TouchableOpacity
+              onPress={() => setAcknowledgementModal(false)}
+              className="py-3 mt-4 bg-gray-400 rounded-lg"
+            >
+              <Text className="font-semibold text-center text-white">Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/*  Usage Modal (moved out of acknowledgementModal) */}
+      {/* <Modal visible={usageModalVisible} transparent animationType="fade">
+        <View className="items-center justify-center flex-1 p-5 bg-black/50">
+          <View className="w-full max-h-[80%] p-5 bg-white rounded-2xl">
+            {selectedItem && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text className="mb-3 text-lg font-bold text-gray-800">
+                  Usage for {selectedItem.item_name}
                 </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </ScrollView>
-      )}
 
-      <TouchableOpacity
-        onPress={() => setAcknowledgementModal(false)}
-        className="py-3 mt-4 bg-gray-400 rounded-lg"
-      >
-        <Text className="font-semibold text-center text-white">Close</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
+                <TextInput
+                  keyboardType="numeric"
+                  placeholder="Enter used quantity"
+                  value={usages[selectedItem.id]?.used_quantity || ""}
+                  onChangeText={(value) =>
+                    setUsages((prev) => ({
+                      ...prev,
+                      [selectedItem.id]: {
+                        ...prev[selectedItem.id],
+                        used_quantity: value,
+                      },
+                    }))
+                  }
+                  className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
+                />
+
+                <TextInput
+                  placeholder="Enter remarks"
+                  value={usages[selectedItem.id]?.remarks || ""}
+                  onChangeText={(value) =>
+                    setUsages((prev) => ({
+                      ...prev,
+                      [selectedItem.id]: {
+                        ...prev[selectedItem.id],
+                        remarks: value,
+                      },
+                    }))
+                  }
+                  className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
+                  multiline
+                  numberOfLines={3}
+                />
+
+                <TouchableOpacity
+                  onPress={async () => {
+                    try {
+                      await axios.post("http://103.118.158.127/api/site-incharge/usage-material", {
+                        material_dispatch_id: selectedItem.id,
+                        used_quantity: parseInt(usages[selectedItem.id]?.used_quantity || "0"),
+                        remarks: usages[selectedItem.id]?.remarks || null,
+                      });
+                      Alert.alert("Success", "Usage saved successfully");
+                      setUsageModalVisible(false);
+                    } catch (err) {
+                      Alert.alert("Error", "Failed to save usage");
+                    }
+                  }}
+                  className="px-4 py-3 mt-2 bg-indigo-600 rounded-lg"
+                >
+                  <Text className="font-semibold text-center text-white">
+                    Save Usage
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+            <TouchableOpacity
+              onPress={() => setUsageModalVisible(false)}
+              className="py-3 mt-4 bg-gray-400 rounded-lg"
+            >
+              <Text className="font-semibold text-center text-white">Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal> */}
+
+      
+
+      {/* Usage Modal */}
+      <Modal visible={usageModalVisible} transparent animationType="fade">
+        <View className="items-center justify-center flex-1 p-5 bg-black/50">
+          <View className="w-full max-h-[80%] p-5 bg-white rounded-2xl">
+            {selectedItem && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text className="mb-3 text-lg font-bold text-gray-800">
+                  Usage for {selectedItem.item_name}
+                </Text>
+
+                {/* Used Quantity */}
+                <Text className="mb-1 text-sm font-medium text-gray-600">
+                  Used Quantity
+                </Text>
+                <TextInput
+                  keyboardType="numeric"
+                    placeholder="Enter used quantity"
+                    value={usageInputs[selectedItem.id]?.overall_qty || ""}
+                    onChangeText={(value) => handleInputChange(selectedItem.id, 'overall_qty', value)}
+                  className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
+                />
+
+                {/* Remarks */}
+                <Text className="mb-1 text-sm font-medium text-gray-600">
+                  Remarks
+                </Text>
+                <TextInput
+                  placeholder="Enter remarks"
+                    value={usageInputs[selectedItem.id]?.remarks || ""}
+                    onChangeText={(value) => handleInputChange(selectedItem.id, 'remarks', value)}
+                  className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                />
+
+              
+                <TouchableOpacity
+                  onPress={() => handleSaveUsage(selectedItem.id)}
+                  disabled={submitting || !usageInputs[selectedItem.id]?.overall_qty}
+                  className={`px-4 py-3 mt-2 rounded-lg ${
+                    submitting || !usageInputs[selectedItem.id]?.overall_qty 
+                      ? "bg-gray-300" 
+                      : "bg-indigo-600"
+                  }`}
+                >
+                  <Text className="font-semibold text-center text-white">
+                    {submitting ? "Saving..." : "Save Usage"}
+                  </Text>
+                </TouchableOpacity>
+
+
+              </ScrollView>
+            )}
+
+            <TouchableOpacity
+              onPress={() => setUsageModalVisible(false)}
+              className="py-3 mt-4 bg-gray-400 rounded-lg"
+            >
+              <Text className="font-semibold text-center text-white">Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
 
 
       {loading && (
