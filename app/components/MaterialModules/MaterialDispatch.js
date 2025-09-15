@@ -212,6 +212,8 @@ const Material = () => {
     }
   }, [selectedProject, selectedSite, selectedWorkDescription]);
 
+
+
   const handleAcknowledge = async (dispatchId) => {
     const ackData = acknowledgements[dispatchId];
     if (!ackData) return;
@@ -246,6 +248,7 @@ const Material = () => {
     }
   };
 
+
   const handleAckInputChange = (dispatchId, field, value) => {
     setAcknowledgements(prev => ({
       ...prev,
@@ -258,7 +261,7 @@ const Material = () => {
 
   
 
-
+  // material acknowledgement
   const openAcknowledgementModal = (item) => {
     setSelectedItem(item);
     // Initialize with existing acknowledgement data or empty strings
@@ -273,18 +276,36 @@ const Material = () => {
     setAcknowledgementModal(true);
   };
 
-  const openUsageModal = (item) => {
-    console.log("Opening usage modal for:", item.item_name);
-  setSelectedItem(item);
+  // material usage 
+//   const openUsageModal = (item) => {
+//     console.log("Opening usage modal for:", item.item_name);
+//     setSelectedItem(item);
 
-   // Initialize usage state for this item if not exists
-  setUsages((prev) => ({
+//     // Initialize usage state for this item if not exists
+//     setUsages((prev) => ({
+//       ...prev,
+//       [item.id]: prev[item.id] || { used_quantity: "", remarks: "" },
+//     }));
+//     setUsageModalVisible(true);
+// };
+
+  const openUsageModal = (item) => {
+  console.log("Opening usage modal for:", item.item_name);
+  setSelectedItem(item);
+  
+  const ackData = ackDetails[item.id];
+  if (ackData && ackData.acknowledgement) {
+    fetchUsageDetails(ackData.acknowledgement.id);
+  }
+
+  setUsageInputs(prev => ({
     ...prev,
-    [item.id]: prev[item.id] || { used_quantity: "", remarks: "" },
+    [item.id]: prev[item.id] || { overall_qty: "", remarks: "" }
   }));
   setUsageModalVisible(true);
 };
 
+  // changing input
   const handleInputChange = (compositeKey, field, value) => {
   setUsageInputs(prev => ({
     ...prev,
@@ -294,9 +315,50 @@ const Material = () => {
     }
   }));
 };
+  
+  // saving material usage
+//   const handleSaveUsage = async (ackId) => {
+//   const usageData = usageInputs[ackId];
+//   if (!usageData || !usageData.overall_qty) {
+//     Alert.alert("Error", "Please enter usage quantity");
+//     return;
+//   }
 
-  const handleSaveUsage = async (ackId) => {
-  const usageData = usageInputs[ackId];
+//   try {
+//     setSubmitting(true);
+    
+//     // Use the correct API endpoint from your web version
+//     const response = await axios.post("http://103.118.158.127/api/site-incharge/save-material-usage", {
+//       material_ack_id: parseInt(ackId),
+//       entry_date: selectedDate,
+//       overall_qty: parseInt(usageData.overall_qty),
+//       remarks: usageData.remarks || null,
+//       created_by: 1 // You'll need to get this from user context or params
+//     });
+
+//     Alert.alert("Success", response.data.message);
+    
+//     // Clear the usage input
+//     setUsageInputs(prev => ({ ...prev, [ackId]: {} }));
+//     setUsageModalVisible(false);
+    
+//   } catch (err) {
+//     Alert.alert("Error", err.response?.data?.message || "Failed to save material usage");
+//   } finally {
+//     setSubmitting(false);
+//   }
+// };
+
+  const handleSaveUsage = async (dispatchId) => {
+  const ackData = ackDetails[dispatchId];
+  if (!ackData || !ackData.acknowledgement) {
+    Alert.alert("Error", "No acknowledgement found for this item");
+    return;
+  }
+  
+  const ackId = ackData.acknowledgement.id;
+  const usageData = usageInputs[dispatchId];
+  
   if (!usageData || !usageData.overall_qty) {
     Alert.alert("Error", "Please enter usage quantity");
     return;
@@ -305,20 +367,21 @@ const Material = () => {
   try {
     setSubmitting(true);
     
-    // Use the correct API endpoint from your web version
     const response = await axios.post("http://103.118.158.127/api/site-incharge/save-material-usage", {
       material_ack_id: parseInt(ackId),
       entry_date: selectedDate,
       overall_qty: parseInt(usageData.overall_qty),
       remarks: usageData.remarks || null,
-      created_by: 1 // You'll need to get this from user context or params
+      created_by: 1
     });
 
     Alert.alert("Success", response.data.message);
     
-    // Clear the usage input
-    setUsageInputs(prev => ({ ...prev, [ackId]: {} }));
-    setUsageModalVisible(false);
+    // Refresh usage details
+    fetchUsageDetails(ackId);
+    
+    // Clear inputs
+    setUsageInputs(prev => ({ ...prev, [dispatchId]: {} }));
     
   } catch (err) {
     Alert.alert("Error", err.response?.data?.message || "Failed to save material usage");
@@ -480,6 +543,8 @@ const Material = () => {
     <View className="flex-1 p-3 bg-gray-100">
       
       {/* Header with Company, Project, Site, Work Description Selection */}
+
+
       {/* <View className="bg-[#fff] px-4 py-2 rounded-xl mb-4">
         <View className="">
 
@@ -519,74 +584,70 @@ const Material = () => {
       </View> */}
 
       {!dropdownsCollapsed ? (
-  <View className="px-4 py-2 mb-4 bg-white rounded-xl">
-    <DropdownButton
-      label="Company"
-      value={selectedCompany}
-      onPress={() => setCompanyModalVisible(true)}
-      disabled={false}
-    />
+        <View className="px-4 py-2 mb-4 bg-white rounded-xl">
+          <DropdownButton
+            label="Company"
+            value={selectedCompany}
+            onPress={() => setCompanyModalVisible(true)}
+            disabled={false}
+          />
 
-    <DropdownButton
-      label="Project"
-      value={selectedProject}
-      onPress={() => setProjectModalVisible(true)}
-      disabled={!selectedCompany}
-    />
+          <DropdownButton
+            label="Project"
+            value={selectedProject}
+            onPress={() => setProjectModalVisible(true)}
+            disabled={!selectedCompany}
+          />
 
-    <DropdownButton
-      label="Site"
-      value={selectedSite}
-      onPress={() => setSiteModalVisible(true)}
-      disabled={!selectedProject}
-    />
+          <DropdownButton
+            label="Site"
+            value={selectedSite}
+            onPress={() => setSiteModalVisible(true)}
+            disabled={!selectedProject}
+          />
 
-    <DropdownButton
-      label="Work Description"
-      value={selectedWorkDescription}
-      onPress={() => setWorkDescModalVisible(true)}
-      disabled={!selectedSite}
-    />
-  </View>
+          <DropdownButton
+            label="Work Description"
+            value={selectedWorkDescription}
+            onPress={() => setWorkDescModalVisible(true)}
+            disabled={!selectedSite}
+          />
+        </View>
       )
 
    : (
-<>
-    {dispatchData.length > 0 && (
-          <TouchableOpacity
-            onPress={() => setSummaryModalVisible(true)}
-            className="px-4 py-3 mb-3 bg-[#1e7a6f] rounded-lg"
-          >
-            <Text className="text-base font-semibold text-center text-white">
-               Acknowledgement status
-            </Text>
-          </TouchableOpacity>
-        )}
+      <>
+          {dispatchData.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setSummaryModalVisible(true)}
+                  className="px-4 py-3 mb-3 bg-[#1e7a6f] rounded-lg"
+                >
+                  <Text className="text-base font-semibold text-center text-white">
+                    Acknowledgement status
+                  </Text>
+                </TouchableOpacity>
+                )}
 
-    <TouchableOpacity
-    onPress={() => setDropdownsCollapsed(false)}
-    style={{
-      position: "absolute",
-      bottom: 20,
-      right: 20,
-      backgroundColor: "#1e7a6f",
-      padding: 14,
-      borderRadius: 50,
-      elevation: 5,
-      zIndex: 999
-    }}
-  >
-    <Ionicons name="list-circle" size={30} color="#fff" />
-  </TouchableOpacity>
-  </>
+              <TouchableOpacity
+                onPress={() => setDropdownsCollapsed(false)}
+                style={{
+                  position: "absolute",
+                  bottom: 20,
+                  right: 20,
+                  backgroundColor: "#1e7a6f",
+                  padding: 14,
+                  borderRadius: 50,
+                  elevation: 5,
+                  zIndex: 999
+                }}
+                >
+                <Ionicons name="list-circle" size={30} color="#fff" />
+              </TouchableOpacity>
+      </>
    )
 }
 
-
-
-
-
-      {/* Dropdown Modals */}
+      {/* popping Dropdown Modals */}
       <DropdownModal
         visible={companyModalVisible}
         onClose={() => setCompanyModalVisible(false)}
@@ -596,7 +657,7 @@ const Material = () => {
         onSelect={(item) => {
         setSelectedCompany(item);
         setCompanyModalVisible(false);
-        setProjectModalVisible(true); // 👈 Auto open Project modal
+        setProjectModalVisible(true); //  Auto open Project modal
       }}
       />
 
@@ -609,7 +670,7 @@ const Material = () => {
         onSelect={(item) => {
         setSelectedProject(item);
         setProjectModalVisible(false);
-        setSiteModalVisible(true); // 👈 Auto open Site modal
+        setSiteModalVisible(true); //  Auto open Site modal
       }}
       />
 
@@ -622,7 +683,7 @@ const Material = () => {
         onSelect={(item) => {
         setSelectedSite(item);
         setSiteModalVisible(false);
-        setWorkDescModalVisible(true); // 👈 Auto open Work Description modal
+        setWorkDescModalVisible(true); // Auto open Work Description modal
       }}
       />
 
@@ -922,7 +983,8 @@ const Material = () => {
       
 
       {/* Usage Modal */}
-      <Modal visible={usageModalVisible} transparent animationType="fade">
+      
+      {/* <Modal visible={usageModalVisible} transparent animationType="fade">
         <View className="items-center justify-center flex-1 p-5 bg-black/50">
           <View className="w-full max-h-[80%] p-5 bg-white rounded-2xl">
             {selectedItem && (
@@ -931,7 +993,7 @@ const Material = () => {
                   Usage for {selectedItem.item_name}
                 </Text>
 
-                {/* Used Quantity */}
+                
                 <Text className="mb-1 text-sm font-medium text-gray-600">
                   Used Quantity
                 </Text>
@@ -943,7 +1005,7 @@ const Material = () => {
                   className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
                 />
 
-                {/* Remarks */}
+                
                 <Text className="mb-1 text-sm font-medium text-gray-600">
                   Remarks
                 </Text>
@@ -984,7 +1046,119 @@ const Material = () => {
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
+      </Modal> */}
+
+      <Modal visible={usageModalVisible} transparent animationType="fade">
+      <View className="items-center justify-center flex-1 p-5 bg-black/50">
+      <View className="w-full max-h-[80%] p-5 bg-white rounded-2xl">
+      {selectedItem && (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View className="">
+            <Text className="mb-3 text-lg font-extrabold text-gray-800 ">
+              Usage for {selectedItem.item_name}
+            
+            </Text>
+
+            
+
+          </View>
+
+          {/* Acknowledged Quantities Section */}
+          {/* {ackDetails[selectedItem.id]?.acknowledgement && (
+            <View className="p-3 mb-4 rounded-lg ">
+              <Text className="mb-2 text-sm font-semibold text-blue-800">
+                Acknowledged Quantities
+              </Text>
+              <Text className="text-sm text-gray-700">
+                Overall: {ackDetails[selectedItem.id].acknowledgement.overall_quantity} (
+                {ackDetails[selectedItem.id].acknowledgement.remarks || 'No remarks'})
+              </Text>
+            </View>
+          )} */}
+
+          {/* Progress Section */}
+          {ackDetails[selectedItem.id]?.acknowledgement && usageDetails[ackDetails[selectedItem.id].acknowledgement.id] && (
+            <View className="p-3 mb-4 border rounded-lg">
+              <Text className="mb-2 text-sm font-semibold text-green-800">
+                Progress as of {selectedDate}
+              </Text>
+              <Text className="text-sm text-gray-700">
+                Used: {usageDetails[ackDetails[selectedItem.id].acknowledgement.id].cumulative?.overall_qty || 0} / {ackDetails[selectedItem.id].acknowledgement.overall_quantity}
+              </Text>
+            </View>
+          )}
+
+          {/* Today's Entries */}
+          {ackDetails[selectedItem.id]?.acknowledgement && usageDetails[ackDetails[selectedItem.id].acknowledgement.id]?.entries?.length > 0 && (
+            <View className="p-3 mb-4 rounded-lg ">
+              <Text className="mb-2 text-sm font-semibold text-gray-800">
+                Entries on {selectedDate}
+              </Text>
+              {usageDetails[ackDetails[selectedItem.id].acknowledgement.id].entries.map((entry, index) => (
+                <View key={index} className="mb-2">
+                  <Text className="text-xs font-medium text-gray-600">
+                    {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}:
+                  </Text>
+                  <Text className="text-sm text-gray-700">
+                    Overall: {entry.overall_qty} ({entry.remarks || 'No remarks'})
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Input Section */}
+          <Text className="mb-1 text-sm font-medium text-gray-600">
+            Used Quantity
+          </Text>
+          <TextInput
+            keyboardType="numeric"
+            placeholder="Enter used quantity"
+            value={usageInputs[selectedItem.id]?.overall_qty || ""}
+            onChangeText={(value) => handleInputChange(selectedItem.id, 'overall_qty', value)}
+            className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
+          />
+
+          <Text className="mb-1 text-sm font-medium text-gray-600">
+            Remarks
+          </Text>
+          <TextInput
+            placeholder="Enter remarks"
+            value={usageInputs[selectedItem.id]?.remarks || ""}
+            onChangeText={(value) => handleInputChange(selectedItem.id, 'remarks', value)}
+            className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+          />
+
+          <TouchableOpacity
+            onPress={() => handleSaveUsage(selectedItem.id)}
+            disabled={submitting || !usageInputs[selectedItem.id]?.overall_qty}
+            className={`px-4 py-3 mt-2 rounded-lg ${
+              submitting || !usageInputs[selectedItem.id]?.overall_qty 
+                ? "bg-gray-300" 
+                : "bg-indigo-600"
+            }`}
+          >
+            <Text className="font-semibold text-center text-white">
+              {submitting ? "Saving..." : "Save Usage"}
+            </Text>
+          </TouchableOpacity>
+
+        </ScrollView>
+      )}
+
+      <TouchableOpacity
+        onPress={() => setUsageModalVisible(false)}
+        className="py-3 mt-4 bg-gray-400 rounded-lg"
+      >
+        <Text className="font-semibold text-center text-white">Close</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+
 
 
 
