@@ -163,6 +163,30 @@ export default function ViewMaterial({
             >
               <Text className="font-bold">Update</Text>
             </Button>
+
+            
+            {/* <Button
+            mode="contained-tonal"
+            buttonColor="#ccc"   // background color
+            textColor="#ffffff"     // text color
+            style={{ borderRadius: 8, margin: 10 }}
+            onPress={onClose}
+            >
+              <Text className="font-bold">Close</Text>
+            </Button> */}
+
+            <TouchableOpacity
+                onPress={onClose}
+                style={{
+                  margin: 10,
+                  padding: 10,
+                  backgroundColor: "#1e7a6f",
+                  borderRadius: 6,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: "#fff" }}>Close</Text>
+            </TouchableOpacity>
           </ScrollView>
         </TouchableOpacity>
       </TouchableOpacity>

@@ -3,7 +3,8 @@ import { TouchableOpacity, View, Text, Image, TextInput } from 'react-native';
 import { Button, Modal } from 'react-native-paper'; // Better styled than RN Button
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-const MaterialCard = ({ itemId, onView, onUpdate, image, itemName }) => {
+
+const MaterialCard = ({ itemId, onView, onUpdate, image, itemName, onUsage }) => {
   return (
     
     
@@ -13,7 +14,7 @@ const MaterialCard = ({ itemId, onView, onUpdate, image, itemName }) => {
         width: '48%',
         marginBottom: 20,
         marginHorizontal: '1%',
-        borderRadius: 24,
+        borderRadius: 10,
         backgroundColor: '#f8fafc',
         shadowColor: '#6366f1',
         shadowOffset: {
@@ -30,23 +31,35 @@ const MaterialCard = ({ itemId, onView, onUpdate, image, itemName }) => {
     >
       {/* Gradient Header */}
       <View style={{
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        backgroundColor: '#1e7a6f',
-        position: 'relative',
-        height: 40
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      backgroundColor: '#f8fafc',
+      position: 'relative',
+      height: 48,
+      borderBottomWidth: 1,
+      borderColor: "#ccc",
+      // shadowColor: '#000',
+      // shadowOffset: {
+      //   width: 0,
+      //   height: 2,
+      // },
+      // shadowOpacity: 0.1,
+      // shadowRadius: 3,
+      elevation: 1,
+    }}>
+
+      <Text style={{
+        fontWeight: '600',
+        textAlign: 'center',
+        color: '#1f2937',
+        fontSize: 10,
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
       }}>
-        
-        <Text style={{
-          fontWeight: '500',
-          textAlign: 'center',
-          color: 'white',
-          fontSize: 10
-        }}>
-          {/* Item {itemId} */}
-          {itemName}
-        </Text>
-      </View>
+        {/* Item {itemId} */}
+        {itemName}
+      </Text>
+    </View>
 
       {/* Card Image */}
       <View style={{
@@ -87,6 +100,8 @@ const MaterialCard = ({ itemId, onView, onUpdate, image, itemName }) => {
             justifyContent: "center",
           }}
           className="border border-[#1e7a6f] "
+          onPress={() => onUsage(itemId)}
+
         >
           <Ionicons
             name="create-outline"
