@@ -10,7 +10,6 @@ import {
   Platform,
   Modal,
   FlatList,
-  TextInput,
   Alert,
 } from "react-native";
 import axios from "axios";
@@ -215,7 +214,7 @@ const DropdownModal = ({ visible, onClose, data, onSelect, title, keyProp }) => 
 );
 
 // Labour Attendance Page Component
-const LabourAttendancePage = ({ onBack }) => {
+const LabourAttendancePage = ({ navigation }) => {
   const attendanceData = [
     "Today's attendance has been successfully recorded for all assigned labours.",
     "Work progress monitoring is active and tracking performance metrics.",
@@ -247,7 +246,7 @@ const LabourAttendancePage = ({ onBack }) => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#0f766e" />
         </TouchableOpacity>
         <Text style={styles.title}>Labour Attendance</Text>
@@ -365,7 +364,7 @@ const apiService = {
   },
 };
 
-export default function LabourAssign({ route }) {
+const LabourAssign = ({ route, navigation }) => {
   // Extract parameters safely - KEEP FALLBACK FROM 1st CODE FOR WORKING SAVE
   const encodedUserId = route?.params?.encodedUserId || 'dGVzdA=='; // 'test' base64 encoded for testing
 
@@ -389,7 +388,6 @@ export default function LabourAssign({ route }) {
     submitting: false,
     refreshing: false,
     assignmentSaved: false,
-    showAttendancePage: false,
     // Modal visibility states
     companyModalVisible: false,
     projectModalVisible: false,
@@ -403,15 +401,6 @@ export default function LabourAssign({ route }) {
   const updateState = useCallback((updates) => {
     setState(prevState => ({ ...prevState, ...updates }));
   }, []);
-
-  // Show attendance page
-  if (state.showAttendancePage) {
-    return (
-      <LabourAttendancePage 
-        onBack={() => updateState({ showAttendancePage: false })} 
-      />
-    );
-  }
 
   // Fetch companies on component mount
   useEffect(() => {
@@ -881,13 +870,13 @@ export default function LabourAssign({ route }) {
               styles.attendanceButton,
               !state.assignmentSaved && styles.attendanceButtonTest
             ]}
-            onPress={() => updateState({ showAttendancePage: true })}
+            onPress={() => navigation.navigate('LabourAttendance')}
             activeOpacity={0.8}
           >
             <View style={styles.buttonContent}>
               <Ionicons name="people" size={18} color="white" />
               <Text style={styles.attendanceButtonText}>
-                {state.assignmentSaved ? 'Labour Attendance' : 'Labour Attendance (Test)'}
+                Labour Attendance
               </Text>
             </View>
           </TouchableOpacity>
@@ -972,7 +961,30 @@ export default function LabourAssign({ route }) {
       )}
     </View>
   );
-}
+};
+
+// App Navigator Component
+const AppNavigator = () => {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="LabourAssign">
+        <Stack.Screen 
+          name="LabourAssign" 
+          component={LabourAssign}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="LabourAttendance" 
+          component={LabourAttendancePage}
+          options={{ headerShown: false }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+
+// Export the main app component
+export default AppNavigator;
 
 const styles = StyleSheet.create({
   container: {
