@@ -139,7 +139,7 @@ const handleApiError = (error, context = '') => {
   return userMessage;
 };
 
-// Dropdown Button Component (EXACT FROM MATERIAL.JS)
+// Dropdown Button Component
 const DropdownButton = ({ label, value, onPress, disabled }) => (
   <View style={styles.dropdownContainer}>
     <Text style={styles.dropdownLabel}>{label}</Text>
@@ -164,7 +164,7 @@ const DropdownButton = ({ label, value, onPress, disabled }) => (
   </View>
 );
 
-// Dropdown Modal Component (EXACT FROM MATERIAL.JS)
+// Dropdown Modal Component
 const DropdownModal = ({ visible, onClose, data, onSelect, title, keyProp }) => (
   <Modal visible={visible} transparent>
     <View style={styles.modalOverlay}>
@@ -395,7 +395,7 @@ export default function LabourAssign({ route }) {
     projectModalVisible: false,
     siteModalVisible: false,
     workDescModalVisible: false,
-    // Dropdown collapse state like Material.js
+    // Dropdown collapse state
     dropdownsCollapsed: false,
   });
 
@@ -699,7 +699,7 @@ export default function LabourAssign({ route }) {
           <Text style={styles.subtitle}>Assign workers to project tasks</Text>
         </View>
 
-        {/* DROPDOWN SECTION - MATERIAL.JS STYLE WITH COLLAPSE */}
+        {/* DROPDOWN SECTION STYLE WITH COLLAPSE */}
         {!state.dropdownsCollapsed && (
           <View style={styles.dropdownSection}>
             <DropdownButton
@@ -894,7 +894,7 @@ export default function LabourAssign({ route }) {
         </View>
       </ScrollView>
 
-      {/* POPUP DROPDOWN MODALS - EXACT FROM MATERIAL.JS */}
+      {/* POPUP DROPDOWN MODALS*/}
       <DropdownModal
         visible={state.companyModalVisible}
         onClose={() => updateState({ companyModalVisible: false })}
@@ -905,7 +905,7 @@ export default function LabourAssign({ route }) {
           updateState({ 
             selectedCompany: item, 
             companyModalVisible: false,
-            projectModalVisible: true, // Auto open next modal like Material.js
+            projectModalVisible: true, // Auto open next modal
             assignmentSaved: false 
           });
         }}
@@ -921,7 +921,7 @@ export default function LabourAssign({ route }) {
           updateState({ 
             selectedProject: item, 
             projectModalVisible: false,
-            siteModalVisible: true, // Auto open next modal like Material.js
+            siteModalVisible: true, // Auto open next modal
             assignmentSaved: false 
           });
         }}
@@ -937,7 +937,7 @@ export default function LabourAssign({ route }) {
           updateState({ 
             selectedSite: item, 
             siteModalVisible: false,
-            workDescModalVisible: true, // Auto open next modal like Material.js
+            workDescModalVisible: true, // Auto open next modal
             assignmentSaved: false 
           });
         }}
@@ -953,7 +953,7 @@ export default function LabourAssign({ route }) {
           updateState({ 
             selectedWorkDesc: item, 
             workDescModalVisible: false,
-            dropdownsCollapsed: true, // Collapse dropdowns like Material.js
+            dropdownsCollapsed: true, // Collapse dropdowns
             assignmentSaved: false 
           });
         }}
@@ -977,7 +977,7 @@ export default function LabourAssign({ route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f3f4f6', // Material.js style background
+    backgroundColor: '#f3f4f6', // Style background
   },
   contentContainer: {
     paddingVertical: 12,
@@ -1007,7 +1007,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   
-  // DROPDOWN SECTION STYLES - FROM MATERIAL.JS
+  // DROPDOWN SECTION STYLES
   dropdownSection: {
     backgroundColor: 'white',
     paddingHorizontal: 16,
@@ -1016,7 +1016,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   
-  // FLOATING BUTTON STYLE - FROM MATERIAL.JS
+  // FLOATING BUTTON STYLE
   floatingButton: {
     position: "absolute",
     bottom: 20,
@@ -1052,7 +1052,7 @@ const styles = StyleSheet.create({
     color: '#dc2626',
   },
   
-  // DROPDOWN BUTTON STYLES - FROM MATERIAL.JS
+  // DROPDOWN BUTTON STYLES
   dropdownContainer: {
     marginBottom: 8,
   },
@@ -1104,7 +1104,7 @@ const styles = StyleSheet.create({
     color: '#6b7280',
   },
 
-  // POPUP MODAL STYLES - FROM MATERIAL.JS
+  // POPUP MODAL STYLES
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
@@ -1125,7 +1125,7 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     padding: 16,
-    backgroundColor: '#14b8a6', // teal-600 from Material.js
+    backgroundColor: '#14b8a6', // teal-600
   },
   modalTitle: {
     fontSize: 18,
