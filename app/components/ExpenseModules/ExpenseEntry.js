@@ -1777,9 +1777,9 @@ export default function BudgetExpenseEntry() {
       
       return (
         <View style={styles.cardsContainer}>
-          <Text style={styles.sectionTitle}>Consumables</Text>
+          {/* <Text style={styles.sectionTitle}>Consumables</Text>
           <Text style={styles.sectionSubtitle}>Materials and supplies</Text>
-          
+           */}
           <View style={styles.productGrid}>
             {consumablesBudgets.map((budget) => (
               <ProductCard
