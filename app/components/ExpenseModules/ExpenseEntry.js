@@ -1118,7 +1118,7 @@ const DropdownModal = ({ visible, onClose, data, onSelect, title, keyProp, label
         </View>
 
         {/* Search Input */}
-        <View style={styles.searchContainer}>
+        {/* <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
@@ -1127,7 +1127,7 @@ const DropdownModal = ({ visible, onClose, data, onSelect, title, keyProp, label
             onChangeText={setSearchQuery}
             autoFocus={true}
           />
-        </View>
+        </View> */}
 
         <FlatList
           data={data}
