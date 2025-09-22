@@ -244,19 +244,45 @@ export default function WorkItemCard({
             >
               Update Work Area
             </Text>
+
+            <Text className="mb-1 text-sm font-medium text-gray-600">
+                        Enter Work Area
+                      </Text>
+                     
             <TextInput
               keyboardType="numeric"
               value={String(newWorkData[item.rec_id] ?? "")}
               onChangeText={(t) => onChange(item.rec_id, t)}
-              placeholder="Enter new work area"
-              style={{
-                borderWidth: 1,
-                borderColor: "#d1d5db",
-                borderRadius: 8,
-                paddingHorizontal: 10,
-                paddingVertical: 8,
-                marginBottom: 16,
-              }}
+              placeholder="new work area"
+              // style={{
+              //   borderWidth: 1,
+              //   borderColor: "#d1d5db",
+              //   borderRadius: 8,
+              //   paddingHorizontal: 10,
+              //   paddingVertical: 8,
+              //   marginBottom: 16,
+              // }}
+              className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
+            />
+
+            <Text className="mb-1 text-sm font-medium text-gray-600">
+                        Remarks
+                      </Text>
+
+            <TextInput
+              keyboardType="numeric"
+              value={""}
+              onChangeText={""}
+              placeholder="remarks"
+              // style={{
+              //   borderWidth: 1,
+              //   borderColor: "#d1d5db",
+              //   borderRadius: 8,
+              //   paddingHorizontal: 10,
+              //   paddingVertical: 8,
+              //   marginBottom: 16,
+              // }}
+              className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
             />
             <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
               <TouchableOpacity

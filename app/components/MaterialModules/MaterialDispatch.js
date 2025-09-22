@@ -15,19 +15,34 @@ import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
 
 const Material = () => {
+
+
   const [companies, setCompanies] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
   const [projects, setProjects] = useState([]);
   const [sites, setSites] = useState([]);
   const [workDescriptions, setWorkDescriptions] = useState([]);
+
+
+
+
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedSite, setSelectedSite] = useState(null);
   const [selectedWorkDescription, setSelectedWorkDescription] = useState(null);
+
+
+
   const [dispatchData, setDispatchData] = useState([]);
   const [acknowledgements, setAcknowledgements] = useState({});
   const [ackDetails, setAckDetails] = useState({});
+
+
+  // loading state
   const [loading, setLoading] = useState(false);
+
+
+  // error state
   const [error, setError] = useState(null);
 
   // Modal states
@@ -39,6 +54,7 @@ const Material = () => {
   const [siteModalVisible, setSiteModalVisible] = useState(false);
   const [workDescModalVisible, setWorkDescModalVisible] = useState(false);
 
+  // summary state
   const [showAllSummary, setShowAllSummary] = useState(false);
   const [summaryModalVisible, setSummaryModalVisible] = useState(false);
 
@@ -52,6 +68,9 @@ const Material = () => {
   const [usageInputs, setUsageInputs] = useState({});
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [usageDetails, setUsageDetails] = useState({});
+
+
+  // submit state
   const [submitting, setSubmitting] = useState(false);
 
 
@@ -60,6 +79,7 @@ const Material = () => {
   // Fetch companies
   const fetchCompanies = async () => {
     try {
+      //if  fetch works correctly loading states will display
       setLoading(true);
       const response = await axios.get("http://103.118.158.127/api/project/companies");
       setCompanies(response.data || []);
@@ -74,6 +94,7 @@ const Material = () => {
   // Fetch projects
   const fetchProjects = async () => {
     try {
+      //if  fetch works correctly loading states will display
       setLoading(true);
       const response = await axios.get("http://103.118.158.127/api/project/projects-with-sites");
       setAllProjects(response.data || []);
@@ -88,6 +109,7 @@ const Material = () => {
   // Fetch work descriptions
   const fetchWorkDescriptions = async (site_id) => {
     try {
+      //if  fetch works correctly loading states will display
       setLoading(true);
       const response = await axios.get("http://103.118.158.127/api/material/work-descriptions", {
         params: { site_id },

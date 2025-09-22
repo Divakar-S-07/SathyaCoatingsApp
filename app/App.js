@@ -16,7 +16,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginPage from "./components/Profile/LoginPage";
 import ExpenseEntry from "./components/ExpenseModules/ExpenseEntry";
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-
+import "./assets/logo.png"
 import { useState, useEffect, useRef } from "react";
 import * as SecureStore from "expo-secure-store";
 import PagerView from 'react-native-pager-view';
@@ -318,7 +318,8 @@ export default function App() {
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {/* Login First */}
-          {/* <Stack.Screen name="Login" component={LoginPage} /> */}
+
+          <Stack.Screen name="Login" component={LoginPage} />
           
           <Stack.Screen name="MainTabs" component={MainTabs} />
         </Stack.Navigator>
