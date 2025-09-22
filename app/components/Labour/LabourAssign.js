@@ -16,6 +16,7 @@ import axios from "axios";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
+import LabourAttendance from "./LabourAttendance";
 
 // API Configuration
 const API_CONFIG = {
@@ -213,129 +214,6 @@ const DropdownModal = ({ visible, onClose, data, onSelect, title, keyProp }) => 
   </Modal>
 );
 
-// Labour Attendance Page Component
-const LabourAttendancePage = ({ navigation }) => {
-  const attendanceData = [
-    "Today's attendance has been successfully recorded for all assigned labours.",
-    "Work progress monitoring is active and tracking performance metrics.",
-    "Site safety protocols are being followed by all team members.",
-    "Daily productivity reports are automatically generated at 6 PM.",
-    "Weather conditions are favorable for outdoor construction activities.",
-    "Equipment maintenance schedules are up to date and functioning properly.",
-    "Material delivery is scheduled for tomorrow morning at 8 AM.",
-    "Quality inspection checkpoints have been completed successfully.",
-    "All workers have received their safety briefing for today's tasks.",
-    "Construction milestones are being achieved according to project timeline.",
-    "Labour productivity metrics show 15% improvement this month.",
-    "Emergency response procedures have been reviewed with all staff.",
-    "New safety equipment has been distributed to all team members.",
-    "Daily work allocation has been optimized for maximum efficiency.",
-    "Site supervisor reports all activities proceeding as scheduled.",
-    "Worker wellness programs are showing positive engagement results.",
-    "Environmental compliance checks completed with satisfactory results.",
-    "Training sessions for new equipment have been successfully conducted.",
-    "Communication systems between teams are functioning optimally.",
-    "Resource allocation has been streamlined for better project flow.",
-  ];
-
-  const randomText = attendanceData[Math.floor(Math.random() * attendanceData.length)];
-  const presentCount = Math.floor(Math.random() * 15) + 20;
-  const leaveCount = Math.floor(Math.random() * 5) + 1;
-  const attendanceRate = Math.floor(((presentCount / (presentCount + leaveCount)) * 100));
-
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#0f766e" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Labour Attendance</Text>
-        <Text style={styles.subtitle}>Track worker attendance and activities</Text>
-      </View>
-
-      <View style={styles.form}>
-        <View style={styles.attendanceCard}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="people-outline" size={24} color="#0f766e" />
-            <Text style={styles.cardTitle}>Daily Attendance Report</Text>
-          </View>
-          
-          <View style={styles.cardContent}>
-            <Text style={styles.attendanceText}>{randomText}</Text>
-          </View>
-
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{presentCount}</Text>
-              <Text style={styles.statLabel}>Present Today</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{leaveCount}</Text>
-              <Text style={styles.statLabel}>On Leave</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{attendanceRate}%</Text>
-              <Text style={styles.statLabel}>Attendance Rate</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="checkmark-circle-outline" size={20} color="#059669" />
-            <Text style={styles.actionButtonText}>Mark Attendance</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="document-text-outline" size={20} color="#0369a1" />
-            <Text style={styles.actionButtonText}>View Reports</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="time-outline" size={20} color="#7c2d12" />
-            <Text style={styles.actionButtonText}>Overtime Log</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="calendar-outline" size={20} color="#7c3aed" />
-            <Text style={styles.actionButtonText}>Schedule</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.infoCard}>
-          <View style={styles.infoHeader}>
-            <Ionicons name="information-circle-outline" size={20} color="#0369a1" />
-            <Text style={styles.infoTitle}>Today's Update</Text>
-          </View>
-          <Text style={styles.infoText}>
-            All labour assignments have been synchronized with the project timeline. 
-            Site supervisors have been notified of today's work distribution and safety requirements.
-            Performance metrics are being monitored continuously.
-          </Text>
-        </View>
-
-        <View style={styles.quickActions}>
-          <Text style={styles.quickActionsTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsList}>
-            <TouchableOpacity style={styles.quickActionItem}>
-              <Ionicons name="add-circle-outline" size={18} color="#059669" />
-              <Text style={styles.quickActionText}>Add Worker</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionItem}>
-              <Ionicons name="swap-horizontal-outline" size={18} color="#0369a1" />
-              <Text style={styles.quickActionText}>Transfer Labour</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionItem}>
-              <Ionicons name="stats-chart-outline" size={18} color="#7c2d12" />
-              <Text style={styles.quickActionText}>View Analytics</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </ScrollView>
-  );
-};
-
 // API service functions
 const apiService = {
   async fetchCompanies() {
@@ -364,9 +242,9 @@ const apiService = {
   },
 };
 
-const LabourAssign = ({ route, navigation }) => {
-  // Extract parameters safely - KEEP FALLBACK FROM 1st CODE FOR WORKING SAVE
-  const encodedUserId = route?.params?.encodedUserId || 'dGVzdA=='; // 'test' base64 encoded for testing
+export default function LabourAssign({ route }) {
+  // Extract parameters safely
+  const encodedUserId = route?.params?.encodedUserId || 'dGVzdA==';
 
   // State management
   const [state, setState] = useState({
@@ -388,6 +266,7 @@ const LabourAssign = ({ route, navigation }) => {
     submitting: false,
     refreshing: false,
     assignmentSaved: false,
+    showAttendancePage: false,
     // Modal visibility states
     companyModalVisible: false,
     projectModalVisible: false,
@@ -522,7 +401,7 @@ const LabourAssign = ({ route, navigation }) => {
     return true;
   }, [state.fromDate, state.toDate]);
 
-  // User ID validation and decoding - FROM 1st CODE FOR WORKING SAVE
+  // User ID validation and decoding
   const validateAndDecodeUserId = useCallback(() => {
     if (!encodedUserId) {
       Toast.show({
@@ -535,7 +414,6 @@ const LabourAssign = ({ route, navigation }) => {
 
     try {
       const decodedUserId = atob(encodedUserId);
-      // ALLOW TEST VALUES AND NUMERIC STRINGS FOR WORKING SAVE
       if (decodedUserId === 'test' || /^\d+$/.test(decodedUserId)) {
         return decodedUserId === 'test' ? 1 : parseInt(decodedUserId, 10);
       }
@@ -550,7 +428,7 @@ const LabourAssign = ({ route, navigation }) => {
     }
   }, [encodedUserId]);
 
-  // Form validation - FROM 1st CODE FOR WORKING SAVE
+  // Form validation
   const isFormValid = useMemo(() =>
     state.selectedCompany &&
     state.selectedProject &&
@@ -563,7 +441,7 @@ const LabourAssign = ({ route, navigation }) => {
     state.toDate >= state.fromDate
   , [state.selectedCompany, state.selectedProject, state.selectedSite, state.selectedWorkDesc, state.selectedLabours, state.fromDate, state.toDate]);
 
-  // Save assignment handler - FROM 1st CODE FOR WORKING SAVE
+  // Save assignment handler
   const handleSaveAssignment = useCallback(async () => {
     // Validation
     if (!isFormValid) {
@@ -580,12 +458,12 @@ const LabourAssign = ({ route, navigation }) => {
     const userId = validateAndDecodeUserId();
     if (!userId) return;
 
-    // PREPARE PAYLOAD - FROM 1st CODE STRUCTURE FOR WORKING SAVE
+    // Prepare payload
     const payload = {
       project_id: state.selectedProject.project_id,
       site_id: state.selectedSite.site_id,
       desc_id: state.selectedWorkDesc.desc_id,
-      labour_ids: state.selectedLabours, // Already array of IDs
+      labour_ids: state.selectedLabours,
       from_date: state.fromDate.toISOString().split('T')[0],
       to_date: state.toDate.toISOString().split('T')[0],
       created_by: userId,
@@ -638,7 +516,7 @@ const LabourAssign = ({ route, navigation }) => {
     }
   }, [updateState]);
 
-  // Labour management - FROM 1st CODE FOR WORKING SAVE
+  // Labour management
   const addLabour = useCallback((labourId) => {
     if (!state.selectedLabours.includes(labourId)) {
       updateState({
@@ -674,6 +552,24 @@ const LabourAssign = ({ route, navigation }) => {
     }
   }, [updateState]);
 
+  // Navigation handlers
+  const navigateToAttendance = useCallback(() => {
+    updateState({ showAttendancePage: true });
+  }, [updateState]);
+
+  const navigateBack = useCallback(() => {
+    updateState({ showAttendancePage: false });
+  }, [updateState]);
+
+  // Conditional rendering - moved to end to avoid hook order issues
+  if (state.showAttendancePage) {
+    return <LabourAttendance 
+      onBack={navigateBack} 
+      selectedLabours={state.selectedLabours}
+      laboursData={state.labours}
+    />;
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -688,7 +584,7 @@ const LabourAssign = ({ route, navigation }) => {
           <Text style={styles.subtitle}>Assign workers to project tasks</Text>
         </View>
 
-        {/* DROPDOWN SECTION STYLE WITH COLLAPSE */}
+        {/* DROPDOWN SECTION */}
         {!state.dropdownsCollapsed && (
           <View style={styles.dropdownSection}>
             <DropdownButton
@@ -723,7 +619,7 @@ const LabourAssign = ({ route, navigation }) => {
 
         {/* MAIN FORM CONTENT */}
         <View style={styles.form}>
-          {/* Labour Selection - FROM 1st CODE */}
+          {/* Labour Selection */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>
               Labours <Text style={styles.required}>*</Text>
@@ -842,7 +738,7 @@ const LabourAssign = ({ route, navigation }) => {
             </View>
           )}
 
-          {/* Save Button - FROM 1st CODE FOR WORKING FUNCTIONALITY */}
+          {/* Save Button */}
           <TouchableOpacity
             style={[
               styles.saveButton,
@@ -866,11 +762,8 @@ const LabourAssign = ({ route, navigation }) => {
 
           {/* Labour Attendance Button */}
           <TouchableOpacity
-            style={[
-              styles.attendanceButton,
-              !state.assignmentSaved && styles.attendanceButtonTest
-            ]}
-            onPress={() => navigation.navigate('LabourAttendance')}
+            style={styles.attendanceButton}
+            onPress={navigateToAttendance}
             activeOpacity={0.8}
           >
             <View style={styles.buttonContent}>
@@ -883,7 +776,7 @@ const LabourAssign = ({ route, navigation }) => {
         </View>
       </ScrollView>
 
-      {/* POPUP DROPDOWN MODALS*/}
+      {/* POPUP DROPDOWN MODALS */}
       <DropdownModal
         visible={state.companyModalVisible}
         onClose={() => updateState({ companyModalVisible: false })}
@@ -894,7 +787,7 @@ const LabourAssign = ({ route, navigation }) => {
           updateState({ 
             selectedCompany: item, 
             companyModalVisible: false,
-            projectModalVisible: true, // Auto open next modal
+            projectModalVisible: true,
             assignmentSaved: false 
           });
         }}
@@ -910,7 +803,7 @@ const LabourAssign = ({ route, navigation }) => {
           updateState({ 
             selectedProject: item, 
             projectModalVisible: false,
-            siteModalVisible: true, // Auto open next modal
+            siteModalVisible: true,
             assignmentSaved: false 
           });
         }}
@@ -926,7 +819,7 @@ const LabourAssign = ({ route, navigation }) => {
           updateState({ 
             selectedSite: item, 
             siteModalVisible: false,
-            workDescModalVisible: true, // Auto open next modal
+            workDescModalVisible: true,
             assignmentSaved: false 
           });
         }}
@@ -942,7 +835,7 @@ const LabourAssign = ({ route, navigation }) => {
           updateState({ 
             selectedWorkDesc: item, 
             workDescModalVisible: false,
-            dropdownsCollapsed: true, // Collapse dropdowns
+            dropdownsCollapsed: true,
             assignmentSaved: false 
           });
         }}
@@ -950,7 +843,7 @@ const LabourAssign = ({ route, navigation }) => {
 
       <Toast />
 
-      {/* FLOATING BUTTON - POSITIONED OUTSIDE SCROLLVIEW */}
+      {/* FLOATING BUTTON */}
       {state.dropdownsCollapsed && (
         <TouchableOpacity
           onPress={() => updateState({ dropdownsCollapsed: false })}
@@ -961,35 +854,12 @@ const LabourAssign = ({ route, navigation }) => {
       )}
     </View>
   );
-};
-
-// App Navigator Component
-const AppNavigator = () => {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="LabourAssign">
-        <Stack.Screen 
-          name="LabourAssign" 
-          component={LabourAssign}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen 
-          name="LabourAttendance" 
-          component={LabourAttendancePage}
-          options={{ headerShown: false }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
-};
-
-// Export the main app component
-export default AppNavigator;
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f3f4f6', // Style background
+    backgroundColor: '#f3f4f6',
   },
   contentContainer: {
     paddingVertical: 12,
@@ -1011,12 +881,6 @@ const styles = StyleSheet.create({
     color: '#64748b',
     textAlign: 'center',
     fontWeight: '400',
-  },
-  backButton: {
-    position: 'absolute',
-    left: 20,
-    top: 0,
-    zIndex: 1,
   },
   
   // DROPDOWN SECTION STYLES
@@ -1137,7 +1001,7 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     padding: 16,
-    backgroundColor: '#14b8a6', // teal-600
+    backgroundColor: '#14b8a6',
   },
   modalTitle: {
     fontSize: 18,
@@ -1169,7 +1033,7 @@ const styles = StyleSheet.create({
     color: '#6b7280',
   },
 
-  // Labour Selection Styles - FROM 1ST CODE
+  // Labour Selection Styles
   laboursList: {
     maxHeight: 150,
     marginBottom: 10,
@@ -1306,12 +1170,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-  attendanceButtonTest: {
-    backgroundColor: '#7c2d12',
-    borderWidth: 2,
-    borderColor: '#dc2626',
-    shadowColor: '#7c2d12',
-  },
   buttonContent: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -1328,147 +1186,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
-  },
-  
-  // Labour Attendance Page Styles
-  attendanceCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-    marginBottom: 20,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginLeft: 8,
-  },
-  cardContent: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#0f766e',
-  },
-  attendanceText: {
-    fontSize: 15,
-    color: '#374151',
-    lineHeight: 22,
-    fontWeight: '400',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#0f766e',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#64748b',
-    fontWeight: '500',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderWidth: 1.5,
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    width: '48%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginLeft: 8,
-  },
-  infoCard: {
-    backgroundColor: '#eff6ff',
-    borderRadius: 8,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#dbeafe',
-    marginBottom: 20,
-  },
-  infoHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0369a1',
-    marginLeft: 6,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#1e40af',
-    lineHeight: 20,
-    fontWeight: '400',
-  },
-  quickActions: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  quickActionsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 12,
-  },
-  quickActionsList: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  quickActionItem: {
-    alignItems: 'center',
-    flex: 1,
-    paddingVertical: 8,
-  },
-  quickActionText: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 4,
-    textAlign: 'center',
-    fontWeight: '500',
   },
 });
