@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, View, Text, Modal } from 'react-native';
+import { TouchableOpacity, View, Text, Modal, Platform, TextInput, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
-const LabourCard = ({ itemId, onView, itemName, phone, status, onUsage }) => {
+const LabourCard = ({ itemId, onView, itemName, phone, status, onUsage, totalShifts = 0 }) => {
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedShift, setSelectedShift] = useState('');
+  const [attendanceStatus, setAttendanceStatus] = useState('');
+  const [remarks, setRemarks] = useState('');
   
   // Get status color and icon based on attendance status
   const getStatusDisplay = (status) => {
@@ -21,16 +27,78 @@ const LabourCard = ({ itemId, onView, itemName, phone, status, onUsage }) => {
 
   const statusDisplay = getStatusDisplay(status);
 
-  const attendanceOptions = [
+  // Remove predefined shift options - user will input manually
+
+  const attendanceStatusOptions = [
     { key: 'present', label: 'Present', icon: 'checkmark-circle', color: '#059669' },
     { key: 'absent', label: 'Absent', icon: 'close-circle', color: '#dc2626' },
-    { key: 'on_leave', label: 'On Leave', icon: 'time', color: '#d97706' },
+    { key: 'late', label: 'Late', icon: 'time-outline', color: '#f59e0b' },
+    { key: 'on_leave', label: 'On Leave', icon: 'calendar-outline', color: '#d97706' },
+    { key: 'half_day', label: 'Half Day', icon: 'pause-circle', color: '#6366f1' },
   ];
 
-  const handleAttendanceSelect = (attendanceType) => {
-    console.log(`Marking ${itemName} (ID: ${itemId}) as ${attendanceType}`);
-    onUsage(itemId, attendanceType); // Pass both ID and attendance type
+  const handleDateChange = (event, date) => {
+    setShowDatePicker(false);
+    if (date) {
+      setSelectedDate(date);
+    }
+  };
+
+  const handleAttendanceSubmit = () => {
+    // Validation
+    if (!selectedShift.trim()) {
+      Alert.alert('Validation Error', 'Please enter shift hours');
+      return;
+    }
+
+    // Validate numeric input
+    const shiftValue = parseFloat(selectedShift.trim());
+    if (isNaN(shiftValue) || shiftValue <= 0) {
+      Alert.alert('Validation Error', 'Please enter a valid positive number for shift hours');
+      return;
+    }
+
+    if (!attendanceStatus) {
+      Alert.alert('Validation Error', 'Please select attendance status');
+      return;
+    }
+
+    if (!remarks.trim()) {
+      Alert.alert('Validation Error', 'Please enter remarks');
+      return;
+    }
+
+    const attendanceData = {
+      labourId: itemId,
+      labourName: itemName,
+      date: selectedDate.toISOString().split('T')[0],
+      shift: shiftValue, // Store as number
+      status: attendanceStatus,
+      remarks: remarks.trim(),
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log(`Marking attendance for ${itemName} (ID: ${itemId}):`, attendanceData);
+    
+    // Call the parent component's usage handler
+    if (onUsage) {
+      onUsage(attendanceData);
+    }
+
+    // Reset form
+    setSelectedShift('');
+    setAttendanceStatus('');
+    setRemarks('');
     setShowAttendanceModal(false);
+    
+    Alert.alert('Success', `Attendance marked for ${itemName}!\nCurrent shift: ${shiftValue} hours\nNew total: ${(totalShifts + shiftValue).toFixed(1)} hours`);
+  };
+
+  const clearForm = () => {
+    setSelectedShift('');
+    setAttendanceStatus('');
+    setRemarks('');
+    setSelectedDate(new Date());
   };
 
   return (
@@ -175,11 +243,11 @@ const LabourCard = ({ itemId, onView, itemName, phone, status, onUsage }) => {
         </View>
       </TouchableOpacity>
 
-      {/* Attendance Selection Modal */}
+      {/* Attendance Modal */}
       <Modal
         visible={showAttendanceModal}
         transparent={true}
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setShowAttendanceModal(false)}
       >
         <View style={{
@@ -194,96 +262,331 @@ const LabourCard = ({ itemId, onView, itemName, phone, status, onUsage }) => {
             borderRadius: 16,
             padding: 20,
             width: '100%',
-            maxWidth: 300,
+            maxWidth: 400,
+            maxHeight: '90%',
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 10 },
             shadowOpacity: 0.25,
             shadowRadius: 20,
             elevation: 10,
           }}>
-            {/* Modal Header */}
-            <View style={{
-              alignItems: 'center',
-              marginBottom: 20,
-              paddingBottom: 15,
-              borderBottomWidth: 1,
-              borderBottomColor: '#e5e7eb',
-            }}>
-              <Ionicons name="person-outline" size={32} color="#1e7a6f" />
-              <Text style={{
-                fontSize: 16,
-                fontWeight: '700',
-                color: '#1f2937',
-                marginTop: 8,
-                textAlign: 'center',
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Modal Header */}
+              <View style={{
+                alignItems: 'center',
+                marginBottom: 20,
+                paddingBottom: 15,
+                borderBottomWidth: 1,
+                borderBottomColor: '#e5e7eb',
               }}>
-                Mark Attendance
-              </Text>
-              <Text style={{
-                fontSize: 14,
-                color: '#6b7280',
-                marginTop: 4,
-                textAlign: 'center',
-              }}>
-                {itemName} (ID: {itemId})
-              </Text>
-            </View>
+                <Ionicons name="clipboard-outline" size={32} color="#1e7a6f" />
+                <Text style={{
+                  fontSize: 18,
+                  fontWeight: '700',
+                  color: '#1f2937',
+                  marginTop: 8,
+                  textAlign: 'center',
+                }}>
+                  Mark Attendance
+                </Text>
+                <Text style={{
+                  fontSize: 14,
+                  color: '#6b7280',
+                  marginTop: 4,
+                  textAlign: 'center',
+                }}>
+                  {itemName} (ID: {itemId})
+                </Text>
+              </View>
 
-            {/* Attendance Options */}
-            <View style={{ marginBottom: 20 }}>
-              {attendanceOptions.map((option) => (
+              {/* Date Selection */}
+              <View style={{ marginBottom: 20 }}>
+                <Text style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: 8,
+                }}>
+                  Attendance Date
+                </Text>
                 <TouchableOpacity
-                  key={option.key}
-                  onPress={() => handleAttendanceSelect(option.key)}
+                  onPress={() => setShowDatePicker(true)}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
                     paddingVertical: 12,
                     paddingHorizontal: 16,
                     borderRadius: 8,
-                    marginBottom: 8,
-                    backgroundColor: option.color + '10',
+                    backgroundColor: '#f9fafb',
                     borderWidth: 1,
-                    borderColor: option.color + '30',
+                    borderColor: '#d1d5db',
                   }}
                 >
-                  <Ionicons 
-                    name={option.icon} 
-                    size={20} 
-                    color={option.color}
-                    style={{ marginRight: 12 }}
-                  />
+                  <Ionicons name="calendar-outline" size={20} color="#6b7280" style={{ marginRight: 12 }} />
+                  <Text style={{
+                    fontSize: 16,
+                    color: '#1f2937',
+                    flex: 1,
+                  }}>
+                    {selectedDate.toLocaleDateString()}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#6b7280" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Date Picker */}
+              {showDatePicker && (
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={handleDateChange}
+                />
+              )}
+
+              {/* Previous Total Shifts (Read-only) */}
+              <View style={{ marginBottom: 20 }}>
+                <Text style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: 8,
+                }}>
+                  Previous Total Shift Hours
+                </Text>
+                <View style={{
+                  borderWidth: 1,
+                  borderColor: '#e5e7eb',
+                  borderRadius: 8,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  backgroundColor: '#f9fafb',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="time-outline" size={20} color="#6b7280" style={{ marginRight: 8 }} />
+                    <Text style={{
+                      fontSize: 16,
+                      fontWeight: '600',
+                      color: '#1f2937',
+                    }}>
+                      Total: {totalShifts} hours
+                    </Text>
+                  </View>
+                  <View style={{
+                    backgroundColor: '#e5e7eb',
+                    borderRadius: 12,
+                    paddingHorizontal: 8,
+                    paddingVertical: 2,
+                  }}>
+                    <Text style={{
+                      fontSize: 10,
+                      color: '#6b7280',
+                      fontWeight: '500',
+                      textTransform: 'uppercase',
+                    }}>
+                      Read Only
+                    </Text>
+                  </View>
+                </View>
+                <Text style={{
+                  fontSize: 12,
+                  color: '#6b7280',
+                  marginTop: 4,
+                  fontStyle: 'italic',
+                }}>
+                  Cumulative hours worked from all previous attendance records
+                </Text>
+              </View>
+
+              {/* Numeric Shift Input */}
+              <View style={{ marginBottom: 20 }}>
+                <Text style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: 8,
+                }}>
+                  Shift Hours <Text style={{ color: '#dc2626' }}>*</Text>
+                </Text>
+                <TextInput
+                  style={{
+                    borderWidth: 1,
+                    borderColor: '#d1d5db',
+                    borderRadius: 8,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    fontSize: 16,
+                    backgroundColor: '#f9fafb',
+                    color: '#1f2937',
+                    textAlign: 'center',
+                  }}
+                  placeholder="Enter shift hours (e.g., 1, 2, 1.5)"
+                  placeholderTextColor="#9ca3af"
+                  value={selectedShift}
+                  onChangeText={setSelectedShift}
+                  keyboardType="numeric"
+                />
+                <Text style={{
+                  fontSize: 12,
+                  color: '#6b7280',
+                  marginTop: 4,
+                  textAlign: 'center',
+                  fontStyle: 'italic',
+                }}>
+                  Examples: 1, 2, 1.5, 0.5 (hours worked)
+                </Text>
+              </View>
+
+              {/* Attendance Status Selection */}
+              <View style={{ marginBottom: 20 }}>
+                <Text style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: 12,
+                }}>
+                  Attendance Status <Text style={{ color: '#dc2626' }}>*</Text>
+                </Text>
+                <View style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                }}>
+                  {attendanceStatusOptions.map((option) => (
+                    <TouchableOpacity
+                      key={option.key}
+                      onPress={() => setAttendanceStatus(option.key)}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingVertical: 8,
+                        paddingHorizontal: 12,
+                        borderRadius: 20,
+                        backgroundColor: attendanceStatus === option.key ? option.color + '20' : '#f9fafb',
+                        borderWidth: attendanceStatus === option.key ? 2 : 1,
+                        borderColor: attendanceStatus === option.key ? option.color : '#e5e7eb',
+                        minWidth: '45%',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons 
+                        name={option.icon} 
+                        size={14} 
+                        color={option.color}
+                        style={{ marginRight: 6 }}
+                      />
+                      <Text style={{
+                        fontSize: 12,
+                        fontWeight: attendanceStatus === option.key ? '600' : '400',
+                        color: attendanceStatus === option.key ? option.color : '#374151',
+                      }}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Remarks Input */}
+              <View style={{ marginBottom: 25 }}>
+                <Text style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: 8,
+                }}>
+                  Remarks <Text style={{ color: '#dc2626' }}>*</Text>
+                </Text>
+                <TextInput
+                  style={{
+                    borderWidth: 1,
+                    borderColor: '#d1d5db',
+                    borderRadius: 8,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    fontSize: 14,
+                    backgroundColor: '#f9fafb',
+                    color: '#1f2937',
+                    height: 80,
+                    textAlignVertical: 'top',
+                  }}
+                  placeholder="Enter attendance remarks, notes, or any special observations..."
+                  placeholderTextColor="#9ca3af"
+                  value={remarks}
+                  onChangeText={setRemarks}
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+
+              {/* Action Buttons */}
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity
+                  onPress={clearForm}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 12,
+                    paddingHorizontal: 20,
+                    borderRadius: 8,
+                    backgroundColor: '#f3f4f6',
+                    borderWidth: 1,
+                    borderColor: '#d1d5db',
+                    alignItems: 'center',
+                  }}
+                >
                   <Text style={{
                     fontSize: 14,
                     fontWeight: '600',
-                    color: option.color,
-                    flex: 1,
+                    color: '#6b7280',
                   }}>
-                    {option.label}
+                    Clear
                   </Text>
                 </TouchableOpacity>
-              ))}
-            </View>
 
-            {/* Cancel Button */}
-            <TouchableOpacity
-              onPress={() => setShowAttendanceModal(false)}
-              style={{
-                paddingVertical: 12,
-                paddingHorizontal: 24,
-                borderRadius: 8,
-                backgroundColor: '#f3f4f6',
-                alignItems: 'center',
-              }}
-            >
-              <Text style={{
-                fontSize: 14,
-                fontWeight: '600',
-                color: '#6b7280',
-              }}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowAttendanceModal(false)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 12,
+                    paddingHorizontal: 20,
+                    borderRadius: 8,
+                    backgroundColor: '#f3f4f6',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: '#6b7280',
+                  }}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleAttendanceSubmit}
+                  style={{
+                    flex: 2,
+                    paddingVertical: 12,
+                    paddingHorizontal: 20,
+                    borderRadius: 8,
+                    backgroundColor: '#1e7a6f',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: 'white',
+                  }}>
+                    Mark Attendance
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
