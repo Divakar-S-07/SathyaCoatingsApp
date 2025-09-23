@@ -1027,11 +1027,11 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   emptyStateText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#64748b',
     textAlign: 'center',
     marginTop: 16,
-    fontWeight: '500',
+    fontWeight: '400',
   },
   cardsContainer: {
     flexDirection: 'column',
@@ -1075,7 +1075,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   productCardTitle: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '600',
     color: '#1f2937',
     textAlign: 'center',
