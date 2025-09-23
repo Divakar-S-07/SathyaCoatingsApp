@@ -182,6 +182,7 @@ export default function WorkItemCard({
             alignItems: "center",
             flexDirection: "row",
             justifyContent: "center",
+            marginBottom: 15
           }}
         >
           <Ionicons
@@ -197,7 +198,7 @@ export default function WorkItemCard({
       )}
 
       {/* Material Usage Button */}
-      <TouchableOpacity
+      {/* <TouchableOpacity
         onPress={() => setShowMaterialModal(true)}
         style={{
           paddingVertical: 8,
@@ -213,7 +214,7 @@ export default function WorkItemCard({
       >
         <Entypo name="tools" size={16} style={{ marginRight: 6 }} />
         <Text style={{ fontWeight: "600", fontSize: 12 }}>Material Usage</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       {/* Update Modal */}
       <Modal visible={showModal} transparent animationType="fade">
@@ -271,8 +272,7 @@ export default function WorkItemCard({
 
             <TextInput
               keyboardType="numeric"
-              value={""}
-              onChangeText={""}
+              // value={""}
               placeholder="remarks"
               // style={{
               //   borderWidth: 1,

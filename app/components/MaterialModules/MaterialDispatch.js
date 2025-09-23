@@ -482,54 +482,6 @@ const Material = () => {
 };
 
 
-//   const DropdownButton = ({ label, value, onPress, disabled }) => (
-//   <View className="flex-row items-center mb-4">
-//     {/* Fixed label width */}
-//     <Text className="text-sm font-semibold text-gray-700 w-28">{label}</Text>
-
-//     {/* Dropdown with equal width */}
-//     <TouchableOpacity
-//       disabled={disabled}
-//       onPress={onPress}
-//       className={`h-12 flex-1 rounded-xl px-4 flex-row items-center justify-between 
-//         ${disabled ? "bg-gray-200 border border-gray-300" : "bg-[#f9f9f9] border border-gray-400 shadow-sm"}
-//       `}
-//       style={{
-//         shadowColor: "#000",
-//         shadowOpacity: 0.1,
-//         shadowRadius: 4,
-//         shadowOffset: { width: 0, height: 2 },
-//         elevation: 3,
-//       }}
-//     >
-//       <Text
-//         className={`text-base ${
-//           !value
-//             ? "text-gray-400"
-//             : disabled
-//             ? "text-gray-500"
-//             : "text-gray-900 font-medium"
-//         }`}
-//         numberOfLines={1} // prevents text overflow
-//         ellipsizeMode="tail"
-//       >
-//         {value
-//           ? value.company_name ||
-//             value.project_name ||
-//             value.site_name ||
-//             value.desc_name
-//           : `Select ${label}`}
-//       </Text>
-//     </TouchableOpacity>
-//   </View>
-// );
-
-
-
-  
-
-
-
 
   const DropdownModal = ({ visible, onClose, data, onSelect, title, keyProp, displayField }) => (
     <Modal visible={visible} transparent >

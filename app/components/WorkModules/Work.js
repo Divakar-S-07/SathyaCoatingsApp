@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,8 +13,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { TextInput } from "react-native-paper";
 import axios from "axios";
 import WorkItemCard from "./WorkItemCard";
-import UpdateModal from "./popupModels/UpdateModel";
-import ViewModel from "./popupModels/ViewModel";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 const API = "http://103.118.158.127/api";
@@ -22,316 +20,23 @@ const API = "http://103.118.158.127/api";
 const formatDate = (d) =>
   d instanceof Date ? d.toISOString().split("T")[0] : d;
 
-// Material Usage Calculator Function
-const calculateMaterialUsage = (workItems, materials) => {
-  const materialUsage = {};
-  
-  materials.forEach(material => {
-    const poNumber = material.po_number || material.order_no;
-    
-    // Find matching work items for this PO
-    const relatedWorkItems = workItems.filter(work => work.po_number === poNumber);
-    
-    relatedWorkItems.forEach(workItem => {
-      const materialKey = `${material.id}_${workItem.rec_id}`;
-      
-      // Get work completion data
-      const completedArea = parseFloat(workItem.area_completed) || 0;
-      const totalArea = parseFloat(workItem.po_quantity) || 0;
-      const completionPercentage = totalArea > 0 ? (completedArea / totalArea) * 100 : 0;
-      
-      // Get material quantities
-      let totalMaterialQty = parseFloat(material.assigned_quantity) || 0;
-      const compAQty = parseFloat(material.comp_a_qty) || 0;
-      const compBQty = parseFloat(material.comp_b_qty) || 0;
-      const compCQty = parseFloat(material.comp_c_qty) || 0;
-      
-      const hasComponents = compAQty > 0 || compBQty > 0 || compCQty > 0;
-      if (hasComponents) {
-        totalMaterialQty = compAQty + compBQty + compCQty;
-      }
-      
-      // Calculate expected consumption based on work completion
-      const expectedConsumption = (totalMaterialQty * completionPercentage) / 100;
-      
-      // Unit standardization
-      let displayUnit = material.uom_name;
-      let normalizedQty = totalMaterialQty;
-      let normalizedExpected = expectedConsumption;
-      
-      if (material.uom_name === 'ML') {
-        normalizedQty = totalMaterialQty / 1000;
-        normalizedExpected = expectedConsumption / 1000;
-        displayUnit = 'LIT';
-      } else if (material.uom_name === 'GMS') {
-        normalizedQty = totalMaterialQty / 1000;
-        normalizedExpected = expectedConsumption / 1000;
-        displayUnit = 'KG';
-      }
-      
-      const remainingQty = normalizedQty - normalizedExpected;
-      const usageRate = normalizedQty > 0 ? (normalizedExpected / normalizedQty) * 100 : 0;
-      
-      // Determine status
-      let status = 'ADEQUATE';
-      if (completionPercentage >= 95) {
-        status = usageRate >= 80 ? 'COMPLETED_EFFICIENT' : 'UNDERUSED';
-      } else if (remainingQty < 0) {
-        status = 'SHORTAGE';
-      } else if (usageRate > 80 && completionPercentage < 60) {
-        status = 'HIGH_CONSUMPTION';
-      } else if (normalizedQty > normalizedExpected * 3) {
-        status = 'EXCESS_STOCK';
-      }
-      
-      materialUsage[materialKey] = {
-        materialId: material.id,
-        materialName: material.item_name,
-        dcNumber: material.dc_no,
-        dispatchDate: new Date(material.dispatch_date).toLocaleDateString(),
-        vendorCode: material.vendor_code,
-        
-        recId: workItem.rec_id,
-        categoryName: workItem.category_name,
-        subcategoryName: workItem.subcategory_name,
-        workDescription: workItem.work_descriptions,
-        
-        dispatchedQuantity: parseFloat(normalizedQty.toFixed(3)),
-        expectedConsumption: parseFloat(normalizedExpected.toFixed(3)),
-        remainingQuantity: parseFloat(remainingQty.toFixed(3)),
-        unit: displayUnit,
-        
-        completedArea: completedArea,
-        totalArea: totalArea,
-        completionPercentage: parseFloat(completionPercentage.toFixed(1)),
-        completionValue: parseFloat(workItem.completion_value) || 0,
-        
-        workRate: parseFloat(workItem.rate) || 0,
-        usageRate: parseFloat(usageRate.toFixed(1)),
-        status: status,
-        
-        components: hasComponents ? {
-          componentA: {
-            quantity: compAQty,
-            remarks: material.comp_a_remarks,
-            ratio: parseFloat(material.comp_ratio_a) || null,
-            expectedUsage: compAQty > 0 ? (compAQty * completionPercentage) / 100 : 0
-          },
-          componentB: {
-            quantity: compBQty,
-            remarks: material.comp_b_remarks,
-            ratio: parseFloat(material.comp_ratio_b) || null,
-            expectedUsage: compBQty > 0 ? (compBQty * completionPercentage) / 100 : 0
-          },
-          componentC: compCQty > 0 ? {
-            quantity: compCQty,
-            remarks: material.comp_c_remarks,
-            ratio: parseFloat(material.comp_ratio_c) || null,
-            expectedUsage: (compCQty * completionPercentage) / 100
-          } : null
-        } : null
-      };
-    });
-  });
-  
-  return materialUsage;
-};
-
-// Material Usage Dashboard Component
-const MaterialUsageDashboard = ({ materialUsage }) => {
-  const usageEntries = Object.entries(materialUsage);
-  
-  if (usageEntries.length === 0) return null;
-
-  const getStatusColor = (status) => {
-    const colors = {
-      'SHORTAGE': '#e74c3c',
-      'HIGH_CONSUMPTION': '#f39c12', 
-      'EXCESS_STOCK': '#3498db',
-      'COMPLETED_EFFICIENT': '#27ae60',
-      'UNDERUSED': '#9b59b6',
-      'ADEQUATE': '#95a5a6'
-    };
-    return colors[status] || '#95a5a6';
-  };
-
-  return (
-    <View style={{
-      backgroundColor: '#fff',
-      margin: 12,
-      padding: 16,
-      borderRadius: 10,
-      elevation: 3,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-        <Ionicons name="analytics" size={24} color="#1e7a6f" />
-        <Text style={{ 
-          fontSize: 18, 
-          fontWeight: 'bold', 
-          marginLeft: 8,
-          color: '#1e7a6f'
-        }}>
-          Material Usage Analysis
-        </Text>
-      </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {usageEntries.map(([key, data]) => (
-          <View key={key} style={{
-            backgroundColor: '#f8f9fa',
-            borderRadius: 8,
-            padding: 12,
-            marginRight: 12,
-            width: 280,
-            borderLeftWidth: 4,
-            borderLeftColor: getStatusColor(data.status)
-          }}>
-            <View style={{ marginBottom: 8 }}>
-              <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#2c3e50' }}>
-                {data.materialName}
-              </Text>
-              <Text style={{ fontSize: 12, color: '#7f8c8d' }}>
-                {data.subcategoryName} • DC#{data.dcNumber}
-              </Text>
-              <Text style={{ fontSize: 11, color: '#95a5a6' }}>
-                Dispatched: {data.dispatchDate}
-              </Text>
-            </View>
-
-            <View style={{ marginBottom: 8 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                <Text style={{ fontSize: 12, color: '#34495e' }}>Work Progress:</Text>
-                <Text style={{ fontSize: 12, fontWeight: '500', color: '#2c3e50' }}>
-                  {data.completionPercentage}%
-                </Text>
-              </View>
-              
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                <Text style={{ fontSize: 12, color: '#34495e' }}>Material Used:</Text>
-                <Text style={{ fontSize: 12, fontWeight: '500', color: '#2c3e50' }}>
-                  {data.expectedConsumption} {data.unit}
-                </Text>
-              </View>
-              
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                <Text style={{ fontSize: 12, color: '#34495e' }}>Remaining:</Text>
-                <Text style={{ 
-                  fontSize: 12, 
-                  fontWeight: '500', 
-                  color: data.remainingQuantity < 0 ? '#e74c3c' : '#27ae60'
-                }}>
-                  {data.remainingQuantity} {data.unit}
-                </Text>
-              </View>
-              
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: 12, color: '#34495e' }}>Usage Rate:</Text>
-                <Text style={{ fontSize: 12, fontWeight: '500', color: '#2c3e50' }}>
-                  {data.usageRate}%
-                </Text>
-              </View>
-            </View>
-
-            <View style={{
-              backgroundColor: getStatusColor(data.status),
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              borderRadius: 12,
-              alignSelf: 'flex-start',
-              marginBottom: 8
-            }}>
-              <Text style={{ fontSize: 10, color: '#fff', fontWeight: 'bold' }}>
-                {data.status.replace('_', ' ')}
-              </Text>
-            </View>
-
-            {data.components && (
-              <View style={{ paddingTop: 8, borderTopWidth: 1, borderTopColor: '#ecf0f1' }}>
-                <Text style={{ fontSize: 11, fontWeight: 'bold', marginBottom: 4, color: '#34495e' }}>
-                  Components:
-                </Text>
-                {data.components.componentA.quantity > 0 && (
-                  <Text style={{ fontSize: 10, color: '#7f8c8d', marginBottom: 2 }}>
-                    A: {data.components.componentA.expectedUsage.toFixed(1)} / {data.components.componentA.quantity}
-                  </Text>
-                )}
-                {data.components.componentB.quantity > 0 && (
-                  <Text style={{ fontSize: 10, color: '#7f8c8d', marginBottom: 2 }}>
-                    B: {data.components.componentB.expectedUsage.toFixed(1)} / {data.components.componentB.quantity}
-                  </Text>
-                )}
-                {data.components.componentC && (
-                  <Text style={{ fontSize: 10, color: '#7f8c8d' }}>
-                    C: {data.components.componentC.expectedUsage.toFixed(1)} / {data.components.componentC.quantity}
-                  </Text>
-                )}
-              </View>
-            )}
-          </View>
-        ))}
-      </ScrollView>
-    </View>
-  );
-};
-
-// Material Alert Component
-const MaterialAlert = ({ materialUsage }) => {
-  const criticalIssues = Object.entries(materialUsage).filter(([_, data]) => 
-    data.status === 'SHORTAGE' || data.status === 'HIGH_CONSUMPTION'
-  );
-
-  if (criticalIssues.length === 0) return null;
-
-  return (
-    <View style={{
-      backgroundColor: '#fff3cd',
-      borderColor: '#ffeaa7',
-      borderWidth: 1,
-      borderRadius: 8,
-      padding: 12,
-      margin: 12,
-      marginBottom: 0
-    }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-        <Ionicons name="warning" size={20} color="#f39c12" />
-        <Text style={{ 
-          fontWeight: '600', 
-          color: '#856404', 
-          marginLeft: 8,
-          fontSize: 16 
-        }}>
-          Material Issues Detected
-        </Text>
-      </View>
-      
-      {criticalIssues.map(([key, data]) => (
-        <View key={key} style={{ 
-          backgroundColor: 'rgba(243, 156, 18, 0.1)',
-          padding: 8,
-          borderRadius: 6,
-          marginBottom: 6
-        }}>
-          <Text style={{ fontWeight: '500', color: '#856404' }}>
-            {data.materialName} ({data.subcategoryName})
-          </Text>
-          <Text style={{ color: '#856404', fontSize: 12 }}>
-            {data.status === 'SHORTAGE' 
-              ? `Shortage: Need ${Math.abs(data.remainingQuantity)} ${data.unit} more`
-              : `High consumption: ${data.usageRate}% used for ${data.completionPercentage}% work`
-            }
-          </Text>
-        </View>
-      ))}
-    </View>
-  );
-};
-
 export default function Work() {
   const today = formatDate(new Date());
+
+  const [companies, setCompanies] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(null);
+
+
+  const [companyModalVisible, setCompanyModalVisible] = useState(false);
+  const [projectModalVisible, setProjectModalVisible] = useState(false);
+  const [companySearch, setCompanySearch] = useState("");
+  const [projectSearch, setProjectSearch] = useState("");
+
+  const [loadingCompanies, setLoadingCompanies] = useState(true);
+const [loadingProjects, setLoadingProjects] = useState(false);
+
 
   const [selectedWork, setSelectedWork] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -363,35 +68,290 @@ export default function Work() {
   const [historyData, setHistoryData] = useState({});
   const [selectedWorkDesc, setSelectedWorkDesc] = useState(null);
   const [materials, setMaterials] = useState([]);
+
+   // dropdown visible
+    const [dropdownsCollapsed, setDropdownsCollapsed] = useState(false);
   
-  // Material Usage State
-  const [materialUsage, setMaterialUsage] = useState({});
+  
 
   const userId = 1;
+ 
+const fetchCompanies = async () => {
+  try {
+    setLoadingCompanies(true);
+    // Use the same endpoint as your web version
+    const res = await axios.get(`${API}/project/companies`);
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      setCompanies(res.data.map(c => ({
+        id: c.company_id,
+        name: c.company_name,
+      })));
+    } else {
+      console.log("No companies found in response");
+      setCompanies([]);
+    }
+  } catch (err) {
+    console.log("Company fetch error:", err.message);
+    alert("Failed to fetch companies");
+    setCompanies([]);
+  } finally {
+    setLoadingCompanies(false);
+  }
+};
+
+
+
+const filteredCompanies = companies.filter((company) =>
+  company.name.toLowerCase().includes(companySearch.toLowerCase())
+);
+
+
+const fetchProjects = async (companyId) => {
+  try {
+    setLoadingProjects(true);
+    const res = await axios.get(`${API}/project/projects-with-sites`);
+    console.log("Projects API response:", res.data);
+    
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      const filteredProjects = res.data.filter((p) => p.company_id === companyId);
+      console.log("Filtered projects:", filteredProjects);
+      
+      // Make sure to keep the sites data when mapping
+      setProjects(filteredProjects.map(p => ({
+        id: p.project_id,
+        name: p.project_name,
+        sites: p.sites || [] // Ensure sites array exists
+      })));
+    } else {
+      console.log("No projects found");
+      setProjects([]);
+    }
+  } catch (err) {
+    console.log("Project fetch error:", err.message);
+    alert("Failed to fetch projects");
+    setProjects([]);
+  } finally {
+    setLoadingProjects(false);
+  }
+};
+
+// useEffect(() => {
+//   if (selectedProject && projects.length > 0) {
+//     console.log("Selected project changed:", selectedProject);
+//     fetchSites(selectedProject.id);
+//     setSelectedWork(null);
+//   }
+// }, [selectedProject, projects]);
+
+const filteredProjects = projects.filter((project) =>
+  project.name.toLowerCase().includes(projectSearch.toLowerCase())
+);
+
+useEffect(() => {
+  fetchCompanies(); // load companies on start
+}, []);
+
+useEffect(() => {
+  if (selectedCompany) {
+    fetchProjects(selectedCompany.id);
+    setSelectedProject(null);
+    setWorks([]);
+    setSelectedWork(null);
+  }
+}, [selectedCompany]);
+
+// useEffect(() => {
+//   if (selectedProject) {
+//     fetchSites(selectedProject.id);
+//     setSelectedWork(null);
+//   }
+// }, [selectedProject]);
+
+const handleCompanySelect = (company) => {
+  setSelectedCompany(company);
+  setSelectedProject(null);
+  setSelectedWork(null);
+  setWorks([]);
+  // setProjects([]);
+  setCompanyModalVisible(false);
+  setHistoryData({});
+};
+
+
+
+const handleProjectSelect = (project) => {
+  console.log("Project selected:", project);
+  setSelectedProject(project);
+  setSelectedWork(null);
+  setWorks([]);
+  setProjectModalVisible(false);
+  setHistoryData({});
+  
+  // Fetch sites immediately after setting the project
+  // setTimeout(() => {
+  //   if (projects.length > 0) {
+  //     fetchSites(project.id);
+  //   }
+  // }, 100);
+};
+
+const fetchSitesFromAPI = async (projectId) => {
+  try {
+    setLoadingSites(true);
+    console.log("Fetching sites from API for project:", projectId);
+    
+    const res = await axios.get(`${API}/reckoner/sites`, {
+      params: { project_id: projectId },
+    });
+    
+    console.log("Sites API response:", res.data);
+    
+    if (res.data.success && Array.isArray(res.data.data)) {
+      // IMPORTANT: Filter sites by project_id on the frontend as well
+      // In case the API doesn't filter properly on the backend
+      const allSites = res.data.data;
+      const filteredSites = allSites.filter(site => site.project_id === projectId);
+      
+      console.log("All sites from API:", allSites);
+      console.log("Filtered sites for project", projectId + ":", filteredSites);
+      
+      const siteOptions = filteredSites.map(site => ({
+        id: site.site_id,
+        name: site.site_name,
+        po_number: site.po_number,
+      }));
+      
+      setWorks(siteOptions);
+      
+      if (siteOptions.length === 0) {
+        console.log("No sites found for the selected project");
+        alert("No sites available for this project");
+      }
+    } else {
+      console.log("No sites found in API response");
+      setWorks([]);
+    }
+  } catch (err) {
+    console.log("Site fetch error:", err.message);
+    setWorks([]);
+    alert("Failed to fetch sites");
+  } finally {
+    setLoadingSites(false);
+  }
+};
+const fetchSitesFromProjects = async (projectId) => {
+  try {
+    setLoadingSites(true);
+    console.log("Fetching sites from projects data for project:", projectId);
+    
+    // Find the selected project from the projects array
+    const selectedProjectData = projects.find(p => p.id === projectId);
+    console.log("Selected project data:", selectedProjectData);
+    
+    if (selectedProjectData && selectedProjectData.sites) {
+      const siteOptions = selectedProjectData.sites.map(site => ({
+        id: site.site_id,
+        name: site.site_name,
+        po_number: site.po_number,
+      }));
+      
+      console.log("Sites from project data:", siteOptions);
+      setWorks(siteOptions);
+      
+      if (siteOptions.length === 0) {
+        alert("No sites available for this project");
+      }
+    } else {
+      console.log("No sites found in project data");
+      setWorks([]);
+      alert("No sites data available");
+    }
+  } catch (err) {
+    console.log("Site fetch error:", err.message);
+    setWorks([]);
+  } finally {
+    setLoadingSites(false);
+  }
+};
+
+// Update your useEffect to use the project data approach:
+useEffect(() => {
+  if (selectedProject && projects.length > 0) {
+    console.log("Selected project changed:", selectedProject);
+    // Try using project data first, fallback to API if needed
+    fetchSitesFromProjects(selectedProject.id);
+    setSelectedWork(null);
+  }
+}, [selectedProject, projects]);
+
+
+
+
 
   // Sites
-  const fetchSites = async () => {
-    try {
-      setLoadingSites(true);
-      const res = await axios.get(`${API}/reckoner/sites`);
-      if (res.data.success && Array.isArray(res.data.data)) {
-        const options = res.data.data.map((site) => ({
-          id: site.site_id,
-          name: site.site_name,
-          po_number: site.po_number,
-        }));
-        setWorks(options);
-        if (options.length > 0 && !selectedWork) setSelectedWork(options[0]);
-      } else {
-        alert("Failed to load sites");
-      }
-    } catch (err) {
-      console.log(err);
-      alert("Failed to load sites");
-    } finally {
-      setLoadingSites(false);
-    }
-  };
+  // const fetchSites = async () => {
+  //   try {
+  //     setLoadingSites(true);
+  //     const res = await axios.get(`${API}/reckoner/sites`);
+  //     if (res.data.success && Array.isArray(res.data.data)) {
+  //       const options = res.data.data.map((site) => ({
+  //         id: site.site_id,
+  //         name: site.site_name,
+  //         po_number: site.po_number,
+  //       }));
+  //       setWorks(options);
+  //       if (options.length > 0 && !selectedWork) setSelectedWork(options[0]);
+  //     } else {
+  //       alert("Failed to load sites");
+  //     }
+  //   } catch (err) {
+  //     console.log(err);
+  //     alert("Failed to load sites");
+  //   } finally {
+  //     setLoadingSites(false);
+  //   }
+  // };
+
+  
+//   const fetchSites = async (projectId) => {
+//   try {
+//     setLoadingSites(true);
+//     console.log("Fetching sites for project:", projectId);
+//     console.log("Available projects:", projects);
+    
+//     // Use the correct property name: project_id (not project.project_id)
+//     const selectedProjectData = projects.find((p) => p.id === projectId);
+//     console.log("Selected project data:", selectedProjectData);
+    
+//     const sites = selectedProjectData && Array.isArray(selectedProjectData.sites) 
+//       ? selectedProjectData.sites 
+//       : [];
+    
+//     console.log("Sites found:", sites);
+    
+//     const siteOptions = sites.map((site) => ({
+//       id: site.site_id,
+//       name: site.site_name,
+//       po_number: site.po_number,
+//     }));
+    
+//     setWorks(siteOptions);
+    
+//     if (siteOptions.length === 0) {
+//       console.log("No sites available for the selected project");
+//       alert("No sites available for the selected project");
+//     }
+//   } catch (err) {
+//     console.log("Site fetch error:", err.message);
+//     alert("Failed to fetch sites");
+//     setWorks([]);
+//   } finally {
+//     setLoadingSites(false);
+//   }
+// };
+
+
+
 
   // Reckoner
   const fetchReckonerData = async (preserveSelections = false) => {
@@ -510,16 +470,6 @@ export default function Work() {
     }
   };
 
-  // Calculate Material Usage when items and materials change
-  useEffect(() => {
-    if (filteredItems.length && materials.length) {
-      const usage = calculateMaterialUsage(filteredItems, materials);
-      setMaterialUsage(usage);
-    } else {
-      setMaterialUsage({});
-    }
-  }, [filteredItems, materials]);
-
   useEffect(() => {
     if (selectedWork) {
       fetchReckonerData();
@@ -528,16 +478,16 @@ export default function Work() {
     }
   }, [selectedWork]);
 
-  useEffect(() => {
-    fetchSites();
-  }, []);
+  // useEffect(() => {
+  //   fetchSites();
+  // }, []);
 
-  useEffect(() => {
-    if (selectedWork) {
-      setSelectedDate(today);
-      fetchReckonerData();
-    }
-  }, [selectedWork]);
+  // useEffect(() => {
+  //   if (selectedWork) {
+  //     setSelectedDate(today);
+  //     fetchReckonerData();
+  //   }
+  // }, [selectedWork]);
 
   useEffect(() => {
     if (!filteredItems.length || !selectedDate) return;
@@ -621,7 +571,7 @@ export default function Work() {
 
   return (
     <>
-      <View style={{ margin: 12, padding: 8, backgroundColor: "#fff", paddingTop: 0 }}>
+      {!dropdownsCollapsed && (<View style={{ margin: 12, padding: 8, backgroundColor: "#fff", paddingTop: 0 }}>
         <View style={{ marginVertical: 10, flexDirection: "row", alignItems: "center" }}>
           <TouchableOpacity
             onPress={() => setShowDatePicker(true)}
@@ -637,7 +587,7 @@ export default function Work() {
               alignItems: "center",
             }}
           >
-            <Text>
+            <Text className="p-1 tracking-wider text-md">
               {selectedDate
                 ? new Date(selectedDate).toLocaleDateString()
                 : "Select Date"}
@@ -661,13 +611,18 @@ export default function Work() {
         </View>
 
         <View>
+          
+          
+
+          {/* Site */}
           <View>
-            <Text style={{ fontWeight: "600", marginBottom: 5, fontSize: 12, color: "#000" }}>
-              Select Site
-            </Text>
-            <TouchableOpacity
-              onPress={() => setSiteModalVisible(true)}
-              style={{
+
+
+            {/* Company */}
+            <Text style={{ fontWeight: "600", marginBottom: 5, fontSize: 12, color: "#000" }}>Company</Text>
+            <TouchableOpacity 
+            onPress={() => setCompanyModalVisible(true)}
+            style={{
                 height: 35,
                 borderWidth: 1,
                 borderColor: "#ccc",
@@ -680,12 +635,86 @@ export default function Work() {
                 marginBottom: 5,
               }}
             >
+              <Text style={{ color: selectedWork ? "#000" : "#888", fontSize: 14 }}>{selectedCompany?.name || "Select Company"}</Text>
+              <Ionicons name="chevron-down" size={18} color="#888" />
+            </TouchableOpacity>
+
+            
+            {/* Project */}
+          {(
+            <>
+              <Text style={{ fontWeight: "600", marginBottom: 5, fontSize: 12, color: "#000" }}>Project</Text>
+              {/* <TouchableOpacity 
+              // onPress={() => setProjectModalVisible(true)}
+               onPress={() => selectedCompany ? setProjectModalVisible(true) : null}
+              style={{
+                height: 35,
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 6,
+                backgroundColor: "#fff",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 10,
+                marginBottom: 5,
+              }}>
+                <Text style={{ color: selectedWork ? "#000" : "#888", fontSize: 14 }}>{selectedProject?.name || "Select Project"}</Text>
+                <Ionicons name="chevron-down" size={18} color="#888" />
+              </TouchableOpacity> */}
+              <TouchableOpacity 
+                onPress={() => selectedCompany ? setProjectModalVisible(true) : null}
+                style={{
+                  height: 35,
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  backgroundColor: selectedCompany ? "#fff" : "#f5f5f5",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingHorizontal: 10,
+                  marginBottom: 5,
+                  opacity: selectedCompany ? 1 : 0.6,
+                }}
+                disabled={!selectedCompany}
+              >
+                <Text style={{ color: selectedProject ? "#000" : "#888", fontSize: 14 }}>
+                  {selectedProject?.name || "Select Project"}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color="#888" />
+              </TouchableOpacity>
+            </>
+          )}
+
+            <Text style={{ fontWeight: "600", marginBottom: 5, fontSize: 12, color: "#000" }}>
+              Site
+            </Text>
+           
+          <TouchableOpacity
+              onPress={() => selectedProject ? setSiteModalVisible(true) : null}
+              style={{
+                height: 35,
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 6,
+                backgroundColor: selectedProject ? "#fff" : "#f5f5f5",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 10,
+                marginBottom: 5,
+                opacity: selectedProject ? 1 : 0.6,
+              }}
+              disabled={!selectedProject}
+            >
               <Text style={{ color: selectedWork ? "#000" : "#888", fontSize: 14 }}>
                 {selectedWork?.name || "Select Site"}
               </Text>
               <Ionicons name="chevron-down" size={18} color="#888" />
             </TouchableOpacity>
-          </View>
+            </View> 
+          
         </View>
 
         <TextInput
@@ -809,15 +838,122 @@ export default function Work() {
             </Modal>
           </View>
         )}
-      </View>
+      </View>)
 
-      {/* Material Usage Components */}
-      {selectedWork && Object.keys(materialUsage).length > 0 && (
-        <>
-          <MaterialAlert materialUsage={materialUsage} />
-          <MaterialUsageDashboard materialUsage={materialUsage} />
-        </>
-      )}
+}
+      
+  
+
+ 
+
+      
+      {/* company modal */}
+      
+      <Modal visible={companyModalVisible} transparent animationType="fade">
+      <TouchableOpacity
+        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", padding: 20 }}
+        activeOpacity={1}
+        onPressOut={() => setCompanyModalVisible(false)}
+      >
+        <View style={{ backgroundColor: "#fff", borderRadius: 10, padding: 15, maxHeight: "70%" }}>
+          <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 10 }}>
+            Select Company
+          </Text>
+          <TextInput
+            mode="outlined"
+            placeholder="Search Company"
+            value={companySearch}
+            onChangeText={setCompanySearch}
+            style={{ marginBottom: 10, backgroundColor: "#fff" }}
+            theme={{ colors: { primary: "#333" } }}
+            left={<TextInput.Icon icon={() => <Ionicons name="search" size={20} />} />}
+          />
+          {loadingCompanies ? (
+            <View style={{ alignItems: "center", padding: 20 }}>
+              <ActivityIndicator size="small" />
+              <Text style={{ marginTop: 10, color: "#888" }}>Loading companies...</Text>
+            </View>
+          ) : filteredCompanies.length ? (
+            <FlatList
+              data={filteredCompanies}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => handleCompanySelect(item)}
+                  style={{
+                    paddingVertical: 12,
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#eee",
+                  }}
+                >
+                  <Text>{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          ) : (
+            <Text style={{ textAlign: "center", marginTop: 20, color: "#888" }}>
+              No companies found
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    </Modal>
+
+
+      {/* project modal */}
+      
+      <Modal visible={projectModalVisible} transparent animationType="fade">
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", padding: 20 }}
+          activeOpacity={1}
+          onPressOut={() => setProjectModalVisible(false)}
+        >
+          <View style={{ backgroundColor: "#fff", borderRadius: 10, padding: 15, maxHeight: "70%" }}>
+            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 10 }}>
+              Select Project
+            </Text>
+            <TextInput
+              mode="outlined"
+              placeholder="Search Project"
+              value={projectSearch}
+              onChangeText={setProjectSearch}
+              style={{ marginBottom: 10, backgroundColor: "#fff" }}
+              theme={{ colors: { primary: "#333" } }}
+              left={<TextInput.Icon icon={() => <Ionicons name="search" size={20} />} />}
+            />
+            {loadingProjects ? (
+              <View style={{ alignItems: "center", padding: 20 }}>
+                <ActivityIndicator size="small" />
+                <Text style={{ marginTop: 10, color: "#888" }}>Loading projects...</Text>
+              </View>
+            ) : filteredProjects.length ? (
+              <FlatList
+                data={filteredProjects}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => handleProjectSelect(item)}
+                    style={{
+                      paddingVertical: 12,
+                      borderBottomWidth: 1,
+                      borderBottomColor: "#eee",
+                    }}
+                  >
+                    <Text>{item.name}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            ) : (
+              <Text style={{ textAlign: "center", marginTop: 20, color: "#888" }}>
+                No projects found
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+
+      
 
       {/* Site Modal */}
       <Modal visible={siteModalVisible} transparent animationType="fade">
@@ -872,6 +1008,8 @@ export default function Work() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      
 
       {/* Items List */}
       <SafeAreaView style={{ flex: 1, paddingHorizontal: 20, paddingBottom: 10 }}>
@@ -965,17 +1103,7 @@ export default function Work() {
         )}
       </SafeAreaView>
 
-      {/* Modals */}
-      <ViewModel
-        visible={viewVisible}
-        onClose={() => setViewVisible(false)}
-        workItem={selectedItem}
-      />
-      <UpdateModal
-        visible={updateVisible}
-        onClose={() => setUpdateVisible(false)}
-        item={selectedItem}
-      />
+     
     </>
   );
 }
