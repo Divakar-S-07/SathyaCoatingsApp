@@ -27,8 +27,6 @@ const LabourCard = ({ itemId, onView, itemName, phone, status, onUsage, totalShi
 
   const statusDisplay = getStatusDisplay(status);
 
-  // Remove predefined shift options - user will input manually
-
   const attendanceStatusOptions = [
     { key: 'present', label: 'Present', icon: 'checkmark-circle', color: '#059669' },
     { key: 'absent', label: 'Absent', icon: 'close-circle', color: '#dc2626' },
@@ -345,7 +343,7 @@ const LabourCard = ({ itemId, onView, itemName, phone, status, onUsage, totalShi
               )}
 
               {/* Previous Total Shifts (Read-only) */}
-              <View style={{ marginBottom: 20 }}>
+              {/* <View style={{ marginBottom: 20 }}>
                 <Text style={{
                   fontSize: 14,
                   fontWeight: '600',
@@ -399,7 +397,7 @@ const LabourCard = ({ itemId, onView, itemName, phone, status, onUsage, totalShi
                 }}>
                   Cumulative hours worked from all previous attendance records
                 </Text>
-              </View>
+              </View> */}
 
               {/* Numeric Shift Input */}
               <View style={{ marginBottom: 20 }}>
@@ -441,7 +439,7 @@ const LabourCard = ({ itemId, onView, itemName, phone, status, onUsage, totalShi
               </View>
 
               {/* Attendance Status Selection */}
-              <View style={{ marginBottom: 20 }}>
+              {/* <View style={{ marginBottom: 20 }}>
                 <Text style={{
                   fontSize: 14,
                   fontWeight: '600',
@@ -488,10 +486,10 @@ const LabourCard = ({ itemId, onView, itemName, phone, status, onUsage, totalShi
                     </TouchableOpacity>
                   ))}
                 </View>
-              </View>
+              </View> */}
 
               {/* Remarks Input */}
-              <View style={{ marginBottom: 25 }}>
+              <View style={{ marginBottom: 30 }}>
                 <Text style={{
                   fontSize: 14,
                   fontWeight: '600',
@@ -512,6 +510,7 @@ const LabourCard = ({ itemId, onView, itemName, phone, status, onUsage, totalShi
                     color: '#1f2937',
                     height: 80,
                     textAlignVertical: 'top',
+                    marginBottom: 10,
                   }}
                   placeholder="Enter attendance remarks, notes, or any special observations..."
                   placeholderTextColor="#9ca3af"
@@ -522,68 +521,120 @@ const LabourCard = ({ itemId, onView, itemName, phone, status, onUsage, totalShi
                 />
               </View>
 
-              {/* Action Buttons */}
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <TouchableOpacity
-                  onPress={clearForm}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 12,
-                    paddingHorizontal: 20,
-                    borderRadius: 8,
-                    backgroundColor: '#f3f4f6',
-                    borderWidth: 1,
-                    borderColor: '#d1d5db',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{
-                    fontSize: 14,
-                    fontWeight: '600',
-                    color: '#6b7280',
-                  }}>
-                    Clear
-                  </Text>
-                </TouchableOpacity>
+              {/* Action Buttons - Professional Layout */}
+              <View style={{ marginTop: 20 }}>
+                {/* Secondary Actions Row */}
+                <View style={{
+                  flexDirection: 'row',
+                  marginBottom: 15,
+                  gap: 15,
+                }}>
+                  <TouchableOpacity
+                    onPress={clearForm}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 12,
+                      paddingHorizontal: 20,
+                      borderRadius: 12,
+                      backgroundColor: 'transparent',
+                      borderWidth: 1.5,
+                      borderColor: '#e2e8f0',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <View style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                    }}>
+                      <Ionicons 
+                        name="refresh-outline" 
+                        size={16} 
+                        color="#64748b" 
+                        style={{ marginRight: 6 }}
+                      />
+                      <Text style={{
+                        fontSize: 14,
+                        fontWeight: '500',
+                        color: '#64748b',
+                      }}>
+                        Clear
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => setShowAttendanceModal(false)}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 12,
-                    paddingHorizontal: 20,
-                    borderRadius: 8,
-                    backgroundColor: '#f3f4f6',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{
-                    fontSize: 14,
-                    fontWeight: '600',
-                    color: '#6b7280',
-                  }}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setShowAttendanceModal(false)}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 12,
+                      paddingHorizontal: 20,
+                      borderRadius: 12,
+                      backgroundColor: 'transparent',
+                      borderWidth: 1.5,
+                      borderColor: '#e2e8f0',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <View style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                    }}>
+                      <Ionicons 
+                        name="close-outline" 
+                        size={16} 
+                        color="#64748b" 
+                        style={{ marginRight: 6 }}
+                      />
+                      <Text style={{
+                        fontSize: 14,
+                        fontWeight: '500',
+                        color: '#64748b',
+                      }}>
+                        Cancel
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
 
+                {/* Primary Action */}
                 <TouchableOpacity
                   onPress={handleAttendanceSubmit}
                   style={{
-                    flex: 2,
-                    paddingVertical: 12,
-                    paddingHorizontal: 20,
-                    borderRadius: 8,
+                    width: '100%',
+                    paddingVertical: 16,
+                    paddingHorizontal: 24,
+                    borderRadius: 12,
                     backgroundColor: '#1e7a6f',
                     alignItems: 'center',
+                    justifyContent: 'center',
+                    shadowColor: '#1e7a6f',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 12,
+                    elevation: 4,
                   }}
                 >
-                  <Text style={{
-                    fontSize: 14,
-                    fontWeight: '600',
-                    color: 'white',
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
                   }}>
-                    Mark Attendance
-                  </Text>
+                    <Ionicons 
+                      name="checkmark-circle" 
+                      size={18} 
+                      color="white" 
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={{
+                      fontSize: 16,
+                      fontWeight: '600',
+                      color: 'white',
+                      letterSpacing: 0.5,
+                    }}>
+                      Mark Attendance
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               </View>
             </ScrollView>

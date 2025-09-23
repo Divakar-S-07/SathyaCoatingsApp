@@ -139,80 +139,116 @@ const handleApiError = (error, context = '') => {
   return userMessage;
 };
 
-// Dropdown Button Component
-const DropdownButton = ({ label, value, onPress, disabled }) => (
-  <View style={styles.dropdownContainer}>
-    <Text style={styles.dropdownLabel}>{label}</Text>
-    <TouchableOpacity
-      disabled={disabled}
-      onPress={onPress}
-      style={[
-        styles.dropdownButton,
-        disabled ? styles.dropdownButtonDisabled : styles.dropdownButtonEnabled
-      ]}
-    >
-      <View style={styles.dropdownButtonContent}>
-        <Text style={[
-          styles.dropdownButtonText,
-          !value ? styles.dropdownPlaceholder : (disabled ? styles.dropdownDisabledText : styles.dropdownActiveText)
-        ]}>
-          {value ? value.company_name || value.project_name || value.site_name || value.desc_name : `Select ${label}`}
-        </Text>
-        <Ionicons name="chevron-down" size={18} color="#888" />
-      </View>
-    </TouchableOpacity>
-  </View>
-);
+// Dropdown Button Component - Fixed to show correct text based on type
+const DropdownButton = ({ label, value, onPress, disabled, type }) => {
+  const getDisplayText = () => {
+    if (!value) return `Select ${label}`;
+    
+    switch (type) {
+      case 'company':
+        return value.company_name;
+      case 'project':
+        return value.project_name;
+      case 'site':
+        return value.site_name;
+      case 'workDesc':
+        return value.desc_name;
+      default:
+        return `Select ${label}`;
+    }
+  };
 
-// Dropdown Modal Component
-const DropdownModal = ({ visible, onClose, data, onSelect, title, keyProp }) => (
-  <Modal visible={visible} transparent>
-    <View style={styles.modalOverlay}>
+  return (
+    <View style={styles.dropdownContainer}>
+      <Text style={styles.dropdownLabel}>{label}</Text>
       <TouchableOpacity
-        style={styles.modalTouchable}
-        activeOpacity={1}
-        onPress={onClose}
+        disabled={disabled}
+        onPress={onPress}
+        style={[
+          styles.dropdownButton,
+          disabled ? styles.dropdownButtonDisabled : styles.dropdownButtonEnabled
+        ]}
       >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => {}}
-          style={styles.modalContent}
-        >
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{title}</Text>
-          </View>
-
-          <FlatList
-            data={data}
-            keyExtractor={(item) => String(item[keyProp])}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  onSelect(item);
-                  onClose();
-                }}
-                style={styles.modalItem}
-              >
-                <Text style={styles.modalItemText}>
-                  {item.company_name || item.project_name || item.site_name || item.desc_name}
-                </Text>
-              </TouchableOpacity>
-            )}
-            showsVerticalScrollIndicator={true}
-            style={styles.modalList}
-          />
-
-          <TouchableOpacity
-            onPress={onClose}
-            style={styles.modalCancelButton}
-          >
-            <Text style={styles.modalCancelText}>Cancel</Text>
-          </TouchableOpacity>
-        </TouchableOpacity>
+        <View style={styles.dropdownButtonContent}>
+          <Text style={[
+            styles.dropdownButtonText,
+            !value ? styles.dropdownPlaceholder : (disabled ? styles.dropdownDisabledText : styles.dropdownActiveText)
+          ]}>
+            {getDisplayText()}
+          </Text>
+          <Ionicons name="chevron-down" size={18} color="#888" />
+        </View>
       </TouchableOpacity>
     </View>
-  </Modal>
-);
+  );
+};
+
+// Dropdown Modal Component - Fixed to show correct text based on type
+const DropdownModal = ({ visible, onClose, data, onSelect, title, keyProp, type }) => {
+  const getItemText = (item) => {
+    switch (type) {
+      case 'company':
+        return item.company_name;
+      case 'project':
+        return item.project_name;
+      case 'site':
+        return item.site_name;
+      case 'workDesc':
+        return item.desc_name;
+      default:
+        return 'Unknown';
+    }
+  };
+
+  return (
+    <Modal visible={visible} transparent>
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity
+          style={styles.modalTouchable}
+          activeOpacity={1}
+          onPress={onClose}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => {}}
+            style={styles.modalContent}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{title}</Text>
+            </View>
+
+            <FlatList
+              data={data}
+              keyExtractor={(item) => String(item[keyProp])}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    onSelect(item);
+                    onClose();
+                  }}
+                  style={styles.modalItem}
+                >
+                  <Text style={styles.modalItemText}>
+                    {getItemText(item)}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              showsVerticalScrollIndicator={true}
+              style={styles.modalList}
+            />
+
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.modalCancelButton}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
+    </Modal>
+  );
+};
 
 // API service functions
 const apiService = {
@@ -592,6 +628,7 @@ export default function LabourAssign({ route }) {
               value={state.selectedCompany}
               onPress={() => updateState({ companyModalVisible: true })}
               disabled={false}
+              type="company"
             />
 
             <DropdownButton
@@ -599,6 +636,7 @@ export default function LabourAssign({ route }) {
               value={state.selectedProject}
               onPress={() => updateState({ projectModalVisible: true })}
               disabled={!state.selectedCompany}
+              type="project"
             />
 
             <DropdownButton
@@ -606,6 +644,7 @@ export default function LabourAssign({ route }) {
               value={state.selectedSite}
               onPress={() => updateState({ siteModalVisible: true })}
               disabled={!state.selectedProject}
+              type="site"
             />
 
             <DropdownButton
@@ -613,6 +652,7 @@ export default function LabourAssign({ route }) {
               value={state.selectedWorkDesc}
               onPress={() => updateState({ workDescModalVisible: true })}
               disabled={!state.selectedSite}
+              type="workDesc"
             />
           </View>
         )}
@@ -783,6 +823,7 @@ export default function LabourAssign({ route }) {
         data={state.companies}
         title="Select Company"
         keyProp="company_id"
+        type="company"
         onSelect={(item) => {
           updateState({ 
             selectedCompany: item, 
@@ -799,6 +840,7 @@ export default function LabourAssign({ route }) {
         data={state.projects}
         title="Select Project"
         keyProp="project_id"
+        type="project"
         onSelect={(item) => {
           updateState({ 
             selectedProject: item, 
@@ -815,6 +857,7 @@ export default function LabourAssign({ route }) {
         data={state.sites}
         title="Select Site"
         keyProp="site_id"
+        type="site"
         onSelect={(item) => {
           updateState({ 
             selectedSite: item, 
@@ -831,6 +874,7 @@ export default function LabourAssign({ route }) {
         data={state.workDescriptions}
         title="Select Work Description"
         keyProp="desc_id"
+        type="workDesc"
         onSelect={(item) => {
           updateState({ 
             selectedWorkDesc: item, 
