@@ -423,7 +423,18 @@ const Material = () => {
   };
 
   // Reusable dropdown components
-  const DropdownButton = ({ label, value, onPress, disabled }) => (
+  const DropdownButton = ({ label, value, onPress, disabled, displayField }) => 
+    
+    {   
+
+    let displayText = `Select ${label}`;
+
+    if (value) {
+    displayText = displayField ? value[displayField] : value.company_name || value.project_name || value.site_name || value.desc_name;
+    }
+    return(
+
+     
     <View className="mb-2">
       <Text 
       // className="mb-2 text-xs font-extrabold text-[#000] "
@@ -454,13 +465,21 @@ const Material = () => {
               !value ? "text-gray-400" : disabled ? "text-gray-500" : "text-black"
             }`}
           >
-            {value ? value.company_name || value.project_name || value.site_name || value.desc_name : `Select ${label}`}
+            {/* {value ? value?.company_name || value?.project_name || value?.site_name || value?.desc_name : `Select ${label}`} */}
+            {/* {value ? (displayField && value[displayField]) : `Select ${label}`} */}
+
+            {/* {value ? (displayField ? value[displayField] : value.company_name) : `Select ${label}`} */}
+
+            {displayText}
+
           </Text>
           <Ionicons name="chevron-down" size={18} color="#888" />
         </View>
       </TouchableOpacity>
     </View>
-  );
+    
+  )
+};
 
 
 //   const DropdownButton = ({ label, value, onPress, disabled }) => (
@@ -512,7 +531,7 @@ const Material = () => {
 
 
 
-  const DropdownModal = ({ visible, onClose, data, onSelect, title, keyProp }) => (
+  const DropdownModal = ({ visible, onClose, data, onSelect, title, keyProp, displayField }) => (
     <Modal visible={visible} transparent >
       <View className="flex-1 bg-black/60">
         <TouchableOpacity
@@ -541,7 +560,10 @@ const Material = () => {
                   className="px-6 py-4 border-b border-gray-100 active:bg-gray-50"
                 >
                   <Text className="text-base text-gray-800">
-                    {item.company_name || item.project_name || item.site_name || item.desc_name}
+                    {/* {item.company_name || item.project_name || item.site_name || item.desc_name}
+                     */}
+
+                     {displayField ? item[displayField] : item.company_name || item.project_name || item.site_name || item.desc_name}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -564,46 +586,7 @@ const Material = () => {
   return (
     <View className="flex-1 p-3 bg-gray-100">
       
-      {/* Header with Company, Project, Site, Work Description Selection */}
-
-
-      {/* <View className="bg-[#fff] px-4 py-2 rounded-xl mb-4">
-        <View className="">
-
-          
-          
-          <DropdownButton
-            label="Company"
-            value={selectedCompany}
-            onPress={() => setCompanyModalVisible(true)}
-            disabled={false}
-          />
-
-          <DropdownButton
-            label="Project"
-            value={selectedProject}
-            onPress={() => setProjectModalVisible(true)}
-            disabled={!selectedCompany}
-          />
-
-          <DropdownButton
-            label="Site"
-            value={selectedSite}
-            onPress={() => setSiteModalVisible(true)}
-            disabled={!selectedProject}
-          />
-
-          <DropdownButton
-            label="Work Description"
-            value={selectedWorkDescription}
-            onPress={() => setWorkDescModalVisible(true)}
-            disabled={!selectedSite}
-          />
-
-          
-
-        </View>
-      </View> */}
+    
 
       {!dropdownsCollapsed ? (
         <View className="px-4 py-2 mb-4 bg-white rounded-xl">
@@ -619,6 +602,7 @@ const Material = () => {
             value={selectedProject}
             onPress={() => setProjectModalVisible(true)}
             disabled={!selectedCompany}
+            displayField="project_name"
           />
 
           <DropdownButton
@@ -688,6 +672,7 @@ const Material = () => {
         onClose={() => setProjectModalVisible(false)}
         data={projects}
         title="Select Project"
+        displayField="project_name" 
         keyProp="project_id"
         onSelect={(item) => {
         setSelectedProject(item);
@@ -755,93 +740,6 @@ const Material = () => {
                     )}
                   </View>
                 </View>
-
-                {/* <Modal visible={usageModalVisible} transparent animationType="fade">
-        <View className="items-center justify-center flex-1 p-5 bg-black/50">
-          <View className="w-full max-h-[80%] p-5 bg-white rounded-2xl">
-            {selectedItem && (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <Text className="mb-3 text-lg font-bold text-gray-800">
-                  Usage for {selectedItem.item_name}
-                </Text>
-
-                <Text className="mb-1 text-sm font-medium text-gray-600">
-                  Used Quantity
-                </Text>
-                <TextInput
-                  keyboardType="numeric"
-                  placeholder="Enter used quantity"
-                  value={usages[selectedItem.id]?.used_quantity || ""}
-                  onChangeText={(value) =>
-                    setUsages((prev) => ({
-                      ...prev,
-                      [selectedItem.id]: {
-                        ...prev[selectedItem.id],
-                        used_quantity: value,
-                      },
-                    }))
-                  }
-                  className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
-                />
-
-                <Text className="mb-1 text-sm font-medium text-gray-600">
-                  Remarks
-                </Text>
-                <TextInput
-                  placeholder="Enter remarks"
-                  value={usages[selectedItem.id]?.remarks || ""}
-                  onChangeText={(value) =>
-                    setUsages((prev) => ({
-                      ...prev,
-                      [selectedItem.id]: {
-                        ...prev[selectedItem.id],
-                        remarks: value,
-                      },
-                    }))
-                  }
-                  className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
-                  multiline
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                />
-
-                <TouchableOpacity
-                  onPress={async () => {
-                    try {
-                      await axios.post(
-                        "http://103.118.158.127/api/site-incharge/usage-material",
-                        {
-                          material_dispatch_id: selectedItem.id,
-                          used_quantity: parseInt(
-                            usages[selectedItem.id]?.used_quantity || "0"
-                          ),
-                          remarks: usages[selectedItem.id]?.remarks || null,
-                        }
-                      );
-                      Alert.alert("Success", "Usage saved successfully");
-                      setUsageModalVisible(false);
-                    } catch (err) {
-                      Alert.alert("Error", "Failed to save usage");
-                    }
-                  }}
-                  className="px-4 py-3 mt-2 bg-indigo-600 rounded-lg"
-                >
-                  <Text className="font-semibold text-center text-white">
-                    Save Usage
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
-            )}
-
-            <TouchableOpacity
-              onPress={() => setUsageModalVisible(false)}
-              className="py-3 mt-4 bg-gray-400 rounded-lg"
-            >
-              <Text className="font-semibold text-center text-white">Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal> */}
 
 
                 {/* Show existing acknowledgement OR input form */}
@@ -927,148 +825,7 @@ const Material = () => {
         </View>
       </Modal>
 
-      {/*  Usage Modal (moved out of acknowledgementModal) */}
-      {/* <Modal visible={usageModalVisible} transparent animationType="fade">
-        <View className="items-center justify-center flex-1 p-5 bg-black/50">
-          <View className="w-full max-h-[80%] p-5 bg-white rounded-2xl">
-            {selectedItem && (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <Text className="mb-3 text-lg font-bold text-gray-800">
-                  Usage for {selectedItem.item_name}
-                </Text>
-
-                <TextInput
-                  keyboardType="numeric"
-                  placeholder="Enter used quantity"
-                  value={usages[selectedItem.id]?.used_quantity || ""}
-                  onChangeText={(value) =>
-                    setUsages((prev) => ({
-                      ...prev,
-                      [selectedItem.id]: {
-                        ...prev[selectedItem.id],
-                        used_quantity: value,
-                      },
-                    }))
-                  }
-                  className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
-                />
-
-                <TextInput
-                  placeholder="Enter remarks"
-                  value={usages[selectedItem.id]?.remarks || ""}
-                  onChangeText={(value) =>
-                    setUsages((prev) => ({
-                      ...prev,
-                      [selectedItem.id]: {
-                        ...prev[selectedItem.id],
-                        remarks: value,
-                      },
-                    }))
-                  }
-                  className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
-                  multiline
-                  numberOfLines={3}
-                />
-
-                <TouchableOpacity
-                  onPress={async () => {
-                    try {
-                      await axios.post("http://103.118.158.127/api/site-incharge/usage-material", {
-                        material_dispatch_id: selectedItem.id,
-                        used_quantity: parseInt(usages[selectedItem.id]?.used_quantity || "0"),
-                        remarks: usages[selectedItem.id]?.remarks || null,
-                      });
-                      Alert.alert("Success", "Usage saved successfully");
-                      setUsageModalVisible(false);
-                    } catch (err) {
-                      Alert.alert("Error", "Failed to save usage");
-                    }
-                  }}
-                  className="px-4 py-3 mt-2 bg-indigo-600 rounded-lg"
-                >
-                  <Text className="font-semibold text-center text-white">
-                    Save Usage
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
-            )}
-            <TouchableOpacity
-              onPress={() => setUsageModalVisible(false)}
-              className="py-3 mt-4 bg-gray-400 rounded-lg"
-            >
-              <Text className="font-semibold text-center text-white">Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal> */}
-
-      
-
-      {/* Usage Modal */}
-      
-      {/* <Modal visible={usageModalVisible} transparent animationType="fade">
-        <View className="items-center justify-center flex-1 p-5 bg-black/50">
-          <View className="w-full max-h-[80%] p-5 bg-white rounded-2xl">
-            {selectedItem && (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <Text className="mb-3 text-lg font-bold text-gray-800">
-                  Usage for {selectedItem.item_name}
-                </Text>
-
-                
-                <Text className="mb-1 text-sm font-medium text-gray-600">
-                  Used Quantity
-                </Text>
-                <TextInput
-                  keyboardType="numeric"
-                    placeholder="Enter used quantity"
-                    value={usageInputs[selectedItem.id]?.overall_qty || ""}
-                    onChangeText={(value) => handleInputChange(selectedItem.id, 'overall_qty', value)}
-                  className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
-                />
-
-                
-                <Text className="mb-1 text-sm font-medium text-gray-600">
-                  Remarks
-                </Text>
-                <TextInput
-                  placeholder="Enter remarks"
-                    value={usageInputs[selectedItem.id]?.remarks || ""}
-                    onChangeText={(value) => handleInputChange(selectedItem.id, 'remarks', value)}
-                  className="p-3 mb-3 bg-white border border-gray-400 rounded-lg"
-                  multiline
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                />
-
-              
-                <TouchableOpacity
-                  onPress={() => handleSaveUsage(selectedItem.id)}
-                  disabled={submitting || !usageInputs[selectedItem.id]?.overall_qty}
-                  className={`px-4 py-3 mt-2 rounded-lg ${
-                    submitting || !usageInputs[selectedItem.id]?.overall_qty 
-                      ? "bg-gray-300" 
-                      : "bg-indigo-600"
-                  }`}
-                >
-                  <Text className="font-semibold text-center text-white">
-                    {submitting ? "Saving..." : "Save Usage"}
-                  </Text>
-                </TouchableOpacity>
-
-
-              </ScrollView>
-            )}
-
-            <TouchableOpacity
-              onPress={() => setUsageModalVisible(false)}
-              className="py-3 mt-4 bg-gray-400 rounded-lg"
-            >
-              <Text className="font-semibold text-center text-white">Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal> */}
+     
 
       <Modal visible={usageModalVisible} transparent animationType="fade">
       <View className="items-center justify-center flex-1 p-5 bg-black/50">
@@ -1086,7 +843,7 @@ const Material = () => {
           </View>
 
           {/* Acknowledged Quantities Section */}
-          {/* {ackDetails[selectedItem.id]?.acknowledgement && (
+          {ackDetails[selectedItem.id]?.acknowledgement && (
             <View className="p-3 mb-4 rounded-lg ">
               <Text className="mb-2 text-sm font-semibold text-blue-800">
                 Acknowledged Quantities
@@ -1096,7 +853,7 @@ const Material = () => {
                 {ackDetails[selectedItem.id].acknowledgement.remarks || 'No remarks'})
               </Text>
             </View>
-          )} */}
+          )}
 
           {/* Progress Section */}
           {ackDetails[selectedItem.id]?.acknowledgement && usageDetails[ackDetails[selectedItem.id].acknowledgement.id] && (
